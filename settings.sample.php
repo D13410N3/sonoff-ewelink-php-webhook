@@ -17,5 +17,8 @@ $_TG['token'] = 'token_from_botfather';
 // id чата для уведомлений
 $_TG['chat'] = 'your_chat_id';
 
+// IFTTT Maker Key
+$_IFTTT['key'] = 'Enter IFTTT key';
+
 // пароль для доступа к сайту
 $_PASSWORD = 'Password to access';

@@ -74,7 +74,7 @@ if(isset($_GET['id_device']) && isset($_GET['action']))
 		
 		// запрос к ifttt
 		
-		$link = 'https://maker.ifttt.com/trigger/ewelink_'.$_DEVICE['short_name'].'_'.$action.'/with/key/b6ojwZ6RU3fqkY58J17Apa';
+		$link = 'https://maker.ifttt.com/trigger/ewelink_'.$_DEVICE['short_name'].'_'.$action.'/with/key/'.$_IFTTT['key'];
 		
 		// die($link);
 		
