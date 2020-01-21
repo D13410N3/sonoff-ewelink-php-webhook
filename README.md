@@ -59,7 +59,7 @@
 		3. Выберите нужное устройство из списка и выберите тип события (on или off). В случае с многоканальными устройствами необходимо так же выбрать channel
 		4. Нажмите "+" слева от слова "THAT"
 		5. Найдите в поиске Webhooks и далее в нем "Make a web request"
-		6. Укажите URL-адрес вида: https://yoursite.ru/address/to/process.php?key=`%KEY%`&switch=`%SWITCH%`&action=`%ACTION%`
+		6. Укажите URL-адрес вида: `https://yoursite.ru/address/to/process.php?key=%KEY%&switch=%SWITCH%&action=%ACTION%`
 		где
 			1. `%KEY%` - пароль для доступа, он содержится в переменной `$_PASSWORD`
 			2. `%SWITCH%` - краткое название устройства (см пункт 2.2)
