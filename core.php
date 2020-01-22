@@ -42,98 +42,119 @@ function getHeader()
 		
 <!doctype html>
 <html lang="en" class="h-100">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="description" content="">
-    <meta name="author" content="Mark Otto, Jacob Thornton, and Bootstrap contributors">
-    <meta name="generator" content="Jekyll v3.8.6">
-    <title><?=$_PAGE['title']?></title>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+		<meta name="description" content="">
+		<meta name="author" content="Mark Otto, Jacob Thornton, and Bootstrap contributors">
+		<meta name="generator" content="Jekyll v3.8.6">
+		<title><?=$_PAGE['title']?></title>
 
-    <link rel="canonical" href="https://getbootstrap.com/docs/4.4/examples/sticky-footer-navbar/">
+		<link rel="canonical" href="https://getbootstrap.com/docs/4.4/examples/sticky-footer-navbar/">
 
-    <!-- Bootstrap core CSS -->
-<link href="bootstrap-4.4.1-dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+		<!-- Bootstrap core CSS -->
+		<link href="bootstrap-4.4.1-dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
 
-    <!-- Favicons -->
+		<!-- Favicons -->
 
-<meta name="theme-color" content="#563d7c">
+		<meta name="theme-color" content="#563d7c">
 
 
-    <style>
-      .bd-placeholder-img {
-        font-size: 1.125rem;
-        text-anchor: middle;
-        -webkit-user-select: none;
-        -moz-user-select: none;
-        -ms-user-select: none;
-        user-select: none;
-      }
+		<style>
+			.bd-placeholder-img 
+				{
+					font-size: 1.125rem;
+					text-anchor: middle;
+					-webkit-user-select: none;
+					-moz-user-select: none;
+					-ms-user-select: none;
+					user-select: none;
+				}
 
-      @media (min-width: 768px) {
-        .bd-placeholder-img-lg {
-          font-size: 3.5rem;
-        }
-      }
-	 
-	 .copyleft {
-		  display:inline-block;
-		  transform: rotate(180deg);
-		}
-	 .device_card {
-		  border-bottom: 1px solid #eee; padding: 10px;
-		}
-    </style>
-    <!-- Custom styles for this template -->
-  </head>
-  <body class="d-flex flex-column h-100">
-    <header>
-  <!-- Fixed navbar -->
-  <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
-    <a class="navbar-brand" href="#">Smart Home</a>
-    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarCollapse">
-	<ul class="navbar-nav mr-auto">
-	<?php
+			@media (min-width: 768px) 
+				{
+					.bd-placeholder-img-lg 
+					{
+						font-size: 3.5rem;
+					}
+				}
+
+			.copyleft 
+				{
+					display:inline-block;
+					transform: rotate(180deg);
+				}
+			
+			.device_card 
+				{
+					border-bottom: 1px solid #eee; padding: 10px;
+				}
+		</style>
+		<!-- Custom styles for this template -->
+	</head>
+	
+	<body class="d-flex flex-column h-100">
+		<header>
+		<!-- Fixed navbar -->
+		<nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
+			<a class="navbar-brand" href="#">Smart Home</a>
+			<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+				<span class="navbar-toggler-icon"></span>
+			</button>
+			<div class="collapse navbar-collapse" id="navbarCollapse">
+
+		<?php
 		if(AUT)
 			{
-				?>
-        <li class="nav-item">
-          <a class="nav-link" href="index.php?">Все устройства</a>
-        </li>
-        
-		<li class="nav-item">
-          <a class="nav-link" href="device.php?action=add">Добавить устройство</a>
-        </li>
-		
-		<li class="nav-item">
-          <a class="nav-link" href="rooms.php">Комнаты</a>
-        </li>
+		?>
+				<ul class="navbar-nav mr-auto">
+					<li class="nav-item">
+						<a class="nav-link" href="index.php?">Все устройства</a>
+					</li>
+
+					<li class="nav-item">
+						<a class="nav-link" href="device.php?action=add">Добавить устройство</a>
+					</li>
+
+					<li class="nav-item">
+						<a class="nav-link" href="rooms.php">Комнаты</a>
+					</li>
+				</ul>
+
+				<ul class="navbar-nav ml-auto">
+					<li>
+						<a class="nav-link" href="logout.php?">Выход</a>
+					</li>
+				</ul>
+				
 				<?php
 			}
-		else
+				else
 			{
 				?>
-		<li class="nav-item active">
-          <a class="nav-link" href="login.php?">Вход</a>
-        </li>
+				
+				<ul class="navbar-nav mr-auto">
+				<li class="nav-item active">
+				<a class="nav-link" href="login.php?">Вход</a>
+				</li>
+				</ul>
+				
 				<?php
 			}
-	?>
-      </ul>
-    </div>
-  </nav>
-</header>
+				?>
+				
+				</ul>
+			</div>
+		</nav>
+		</header>
 
-<!-- Begin page content -->
-<main role="main" class="flex-shrink-0">
-  <div class="container">
-    <h1 class="mt-5"><?=$_PAGE['title']?></h1>
-		
-		
-		
+	<!-- Begin page content -->
+	<main role="main" class="flex-shrink-0">
+		<div class="container">
+			<h1 class="mt-5"><?=$_PAGE['title']?></h1>
+			
+			
+			
 		<?php
 	}
 
@@ -143,34 +164,31 @@ function getFooter()
 		?>
 		
 		</div>
-</main>
+	</main>
 
-<footer class="footer mt-auto py-3">
-  <div class="container">
-    <span class="text-muted"><span class="copyleft">&copy;</span> <a href="https://github.com/ICQFan4ever" target="_blank">D13410N3</a></span>
-  </div>
-</footer>
-<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
-      <script>window.jQuery || document.write('<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"><\/script>')</script><script src="bootstrap-4.4.1-dist/js/bootstrap.bundle.min.js" integrity="sha384-6khuMg9gaYr5AxOqhkVIODVIvm9ynTT5J4V1cfthmT+emCG6yVmEZsRHdxlotUnm" crossorigin="anonymous"></script></body>
+	<footer class="footer mt-auto py-3">
+		<div class="container">
+			<span class="text-muted"><span class="copyleft">&copy;</span> <a href="https://github.com/ICQFan4ever" target="_blank">D13410N3</a></span>
+		</div>
+	</footer>
+
+	<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+	<script>window.jQuery || document.write('<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"><\/script>')</script><script src="bootstrap-4.4.1-dist/js/bootstrap.bundle.min.js" integrity="sha384-6khuMg9gaYr5AxOqhkVIODVIvm9ynTT5J4V1cfthmT+emCG6yVmEZsRHdxlotUnm" crossorigin="anonymous"></script>
+	</body>
 </html>
 
 		<?php
 	}
 
 if(isset($_COOKIE['sid']))
+	{
+		if(preg_match('#^([a-f0-9]{32})$#iu', $_COOKIE['sid']))
 			{
-				if(preg_match('#^([a-f0-9]{32})$#iu', $_COOKIE['sid']))
+				$__md5 = md5(md5($_key));
+				
+				if($__md5 == $_COOKIE['sid'])
 					{
-						$__md5 = md5(md5($_key));
-						
-						if($__md5 == $_COOKIE['sid'])
-							{
-								define('AUT', true);
-							}
-						else
-							{
-								define('AUT', false);
-							}
+						define('AUT', true);
 					}
 				else
 					{
@@ -181,6 +199,11 @@ if(isset($_COOKIE['sid']))
 			{
 				define('AUT', false);
 			}
+	}
+else
+	{
+		define('AUT', false);
+	}
 
 function autOnly()
 	{
