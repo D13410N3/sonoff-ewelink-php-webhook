@@ -26,11 +26,11 @@ if(isset($_GET['action']))
 				
 				if($_GET['action'] == 'edit')
 					{
-						if(isset($_POST['button']))
+						if(!empty($_POST['button']))
 							{
 								$formError = array();
 								
-								if(isset($_POST['full_name']))
+								if(!empty($_POST['full_name']))
 									{
 										$db['full_name'] = dbFilter($_POST['full_name'], 100);
 									}
@@ -39,9 +39,9 @@ if(isset($_GET['action']))
 										$formError[] = 'Укажите полное имя';
 									}
 								
-								if(isset($_POST['short_name']))
+								if(!empty($_POST['short_name']))
 									{
-										if(preg_match('#^([a-zA-Z0-9]{1,20})$#iu', $_POST['short_name']))
+										if(preg_match('#^([a-zA-Z0-9_]{1,20})$#iu', $_POST['short_name']))
 											{
 												$q_check = mysql_query("SELECT * FROM `ewelink_devices` WHERE `short_name` = '".$_POST['short_name']."' AND `id` != ".$_DEVICE['id']);
 												if(mysql_num_rows($q_check) != 0)
@@ -61,10 +61,10 @@ if(isset($_GET['action']))
 										$formError[] = 'Укажите краткое имя - от 1 до 20 символов латинского алфавита и цифр';
 									}
 								
-								if(isset($_POST['id_room']))
+								if(!empty($_POST['id_room']))
 									{
 										$id_room = (int)$_POST['id_room'];
-										$q_check_room = mysql_query("SELECT * FROM `rooms` WHERE `id` = ".$id_room);
+										$q_check_room = mysql_query("SELECT * FROM `rooms` WHERE `deleted` = 0 AND `id` = ".$id_room);
 										
 										if(mysql_num_rows($q_check_room) != 1)
 											{
@@ -80,11 +80,11 @@ if(isset($_GET['action']))
 										$formError[] = 'Выберите комнату';
 									}
 								
-								if(isset($_POST['type']))
+								if(!empty($_POST['type']))
 									{
 										if($_POST['type'] != 'switch' && $_POST['type'] != 'light')
 											{
-												$error[] = 'Неверный тип устройства';
+												$formError[] = 'Неверный тип устройства';
 											}
 										else
 											{
@@ -98,7 +98,7 @@ if(isset($_GET['action']))
 								
 								if(empty($formError))
 									{
-										if(mysql_query("UPDATE `ewelink_devices` SET `full_name` = '".$db['full_name']."', `short_name` = '".$db['short_name']."' WHERE `id` = ".$_DEVICE['id']))
+										if(mysql_query("UPDATE `ewelink_devices` SET `full_name` = '".$db['full_name']."', `short_name` = '".$db['short_name']."', `id_room` = ".$db['id_room']." WHERE `id` = ".$_DEVICE['id']))
 											{
 												header("Location: index.php?upd_success");
 												exit;
@@ -112,7 +112,6 @@ if(isset($_GET['action']))
 						
 						setTitle('Редактировать устройство');
 						getHeader();
-						
 						showFormError(isset($formError) ? $formError : '');
 						
 						?>
@@ -133,7 +132,7 @@ if(isset($_GET['action']))
 								<div class="col-sm">
 									Комната:<br />
 									<?php
-									$q_rooms = mysql_query("SELECT * FROM `rooms` ORDER BY `name` ASC");
+									$q_rooms = mysql_query("SELECT * FROM `rooms` WHERE `deleted` = 0 ORDER BY `name` ASC");
 									
 									if(mysql_num_rows($q_rooms) == 0)
 										{
@@ -173,12 +172,16 @@ if(isset($_GET['action']))
 				
 				if($_GET['action'] == 'delete')
 					{
-						if(isset($_POST['button']) && @$_POST['confirm'])
+						if(!empty($_POST['button']) && @$_POST['confirm'])
 							{
-								if(mysql_query("UPDATE `ewelink_devices` SET `deleted` = 1 WHERE `id_device` = ".$_DEVICE['id']))
+								if(mysql_query("UPDATE `ewelink_devices` SET `deleted` = 1 WHERE `id` = ".$_DEVICE['id']))
 									{
 										header('Location: index.php?device_removed');
 										exit;
+									}
+								else
+									{
+										fatalError(mysql_error());
 									}
 							}
 						
@@ -188,7 +191,7 @@ if(isset($_GET['action']))
 						?>
 						
 						<div class="row">
-							<form action="device.php?action=edit&id_device=<?=$_DEVICE['id']?>" method="post">
+							<form action="device.php?action=delete&id_device=<?=$_DEVICE['id']?>" method="post">
 								<div class="col-sm">
 									<input type="checkbox" name="confirm" />
 									<input type="submit" name="button" value="Удалить" class="btn btn-danger" />
@@ -243,7 +246,7 @@ if(isset($_GET['action']))
 						$average = ceil($uptime / $sumEvents);
 						
 						// определяем комнату
-						$q_room = mysql_query("SELECT * FROM `rooms` WHERE `id` = ".$_DEVICE['id']);
+						$q_room = mysql_query("SELECT * FROM `rooms` WHERE `deleted` = 0 AND `id` = ".$_DEVICE['id_room']);
 						if(mysql_num_rows($q_room) == 0)
 							{
 								fatalError('Ошибка: неизвестный ID комнаты. Комната не найдена. Исправьте БД');
@@ -308,11 +311,11 @@ if(isset($_GET['action']))
 		
 		if($_GET['action'] == 'add')
 			{
-				if(isset($_POST['button']))
+				if(!empty($_POST['button']))
 					{
 						$formError = array();
 						
-						if(isset($_POST['full_name']))
+						if(!empty($_POST['full_name']))
 							{
 								$db['full_name'] = dbFilter($_POST['full_name'], 100);
 							}
@@ -321,9 +324,9 @@ if(isset($_GET['action']))
 								$formError[] = 'Укажите полное имя';
 							}
 						
-						if(isset($_POST['short_name']))
+						if(!empty($_POST['short_name']))
 							{
-								if(preg_match('#^([a-zA-Z0-9]{1,20})$#iu', $_POST['short_name']))
+								if(preg_match('#^([a-zA-Z0-9_]{1,20})$#iu', $_POST['short_name']))
 									{
 										$q_check = mysql_query("SELECT * FROM `ewelink_devices` WHERE `short_name` = '".$_POST['short_name']."' AND `id` != ".$_DEVICE['id']);
 										if(mysql_num_rows($q_check) != 0)
@@ -343,10 +346,10 @@ if(isset($_GET['action']))
 								$formError[] = 'Укажите краткое имя - от 1 до 20 символов латинского алфавита и цифр';
 							}
 						
-						if(isset($_POST['id_room']))
+						if(!empty($_POST['id_room']))
 							{
 								$id_room = (int)$_POST['id_room'];
-								$q_check_room = mysql_query("SELECT * FROM `rooms` WHERE `id` = ".$id_room);
+								$q_check_room = mysql_query("SELECT * FROM `rooms` WHERE `deleted` = 0 AND `id` = ".$id_room);
 								
 								if(mysql_num_rows($q_check_room) != 1)
 									{
@@ -362,7 +365,7 @@ if(isset($_GET['action']))
 								$formError[] = 'Выберите комнату';
 							}
 						
-						if(isset($_POST['type']))
+						if(!empty($_POST['type']))
 							{
 								if($_POST['type'] != 'switch' && $_POST['type'] != 'light')
 									{
