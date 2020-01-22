@@ -248,11 +248,11 @@ function showFormError($array)
 	{
 		if(empty($array))
 			{
-				return '';
+				echo '';
 			}
 		else
 			{
-				$output = showError(implode('<br />', $array));
+				echo showError(implode('<br />', $array));
 			}
 	}
 
