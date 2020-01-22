@@ -51,23 +51,26 @@ while($_tmp = mysql_fetch_assoc($q_rooms))
 while($_DEVICE = mysql_fetch_assoc($q_devices))
 	{
 		
-		// делаем запрос на определение последнего события
+		##################### делаем запрос на определение последнего события
 		$q_last = mysql_query("SELECT * FROM `ewelink_events` WHERE `id_device` = ".$_DEVICE['id']." ORDER BY `id` DESC LIMIT 1");
 		
 		if(mysql_num_rows($q_last) == 0)
 			{
 				$status = 0;
+				$noEvents = true;
 			}
 		else
 			{
 				$event_last = mysql_fetch_assoc($q_last);
+				$noEvents = false;
 				
 				$status = $event_last['action'];
 			}
-		
+		##################### Начинаем рисовать блок. Выводим название
 		echo '<div class="col-sm-4 device_card">';
 		echo '<div style="text-align: center"><b>'.$_DEVICE['full_name'].' | '.$_ROOMS[$_DEVICE['id_room']].'</b> ';
 		
+		##################### Определяем статус устройства, рисуем badge 
 		if($status == 0)
 			{
 				echo '<a class="badge badge-pill badge-secondary" href="ifttt_link.php?id_device='.$_DEVICE['id'].'&action=on&date='.$date.'">off</a>';
@@ -78,6 +81,27 @@ while($_DEVICE = mysql_fetch_assoc($q_devices))
 			}
 		
 		echo '</div>';
+		
+		
+		#####################  Если девайс включен - рисуем сколько уже работает, если нет - когда выключился
+		
+		if(!$noEvents)
+			{
+				if($status == 1)
+					{
+						$string_now_uptime = showTimeInterval($unixtime - $event_last['time']);
+						echo '<span class="small">Работает</span> <span class="badge badge-info">'.$string_now_uptime.'</span>';
+					}
+				else
+					{
+						$string_when_off = showWhen($event_last['time']);
+						echo '<span class="small">Выкл. с</span> <span class="badge badge-secondary">'.$string_when_off.'</span>';
+					}
+			}
+		
+		echo '<br />';
+		
+		##################### Работаем с событиями
 		$day_start = strtotime($date." 00:00:00");
 		$day_end = strtotime($date." 23:59:59");
 		$unixtime = time();
@@ -87,7 +111,7 @@ while($_DEVICE = mysql_fetch_assoc($q_devices))
 			{
 				$day_end = $unixtime;
 			}
-
+		
 		$q = mysql_query("SELECT * FROM `ewelink_events` WHERE `id_device` = ".$_DEVICE['id']." AND (`time` BETWEEN ".$day_start." AND ".$day_end.")");
 		
 		if(mysql_num_rows($q) > 0)
@@ -155,12 +179,10 @@ while($_DEVICE = mysql_fetch_assoc($q_devices))
 			}
 		else
 			{
-				// фикс: если свет включен, но событий за сегодня нет, для подсчета аптайма ищем последнее событиебез указания BETWEEN 
+				// фикс: если свет включен, но событий за сегодня нет, для подсчета аптайма за сегодня берем начало текущего дня
 				if($status == 1)
 					{
-						$q_last_on = mysql_query("SELECT * FROM `ewelink_events` WHERE `id_device` = ".$_DEVICE['id']." AND `action` = 1 ORDER BY `time` DESC LIMIT 1");
-						$last_on_event = mysql_fetch_assoc($q_last_on);
-						$uptime = $unixtime - $last_on_event['time'];
+						$uptime = $unixtime - $day_start;
 					}
 				else
 					{
@@ -173,13 +195,10 @@ while($_DEVICE = mysql_fetch_assoc($q_devices))
 		# высчитываем аптайм
 		$string = showTimeInterval($uptime);
 		
-		echo '<span class="small">За день:</span> ';
+		#####################  Рисуем статистику
+		echo '<span class="small">Всего за день:</span> ';
 		echo !empty($string) ? '<span class="badge badge-info">'.$string : '<span class="badge badge-warning">не работало';
-		echo '</span><br />
-		
-		<!--<span class="badge badge-pill badge-light">'.$c_on.' вкл.</span> / <span class="badge badge-pill badge-dark">'.$c_off.' выкл</span>
-		
-		<br />-->';
+		echo '</span><br />';
 		
 		// Подсчет общей статистики
 		
@@ -253,6 +272,8 @@ while($_DEVICE = mysql_fetch_assoc($q_devices))
 		# высчитываем аптайм
 		
 		$string = showTimeInterval($uptime);
+		
+		##################### рисуем коллапс с общей статой
 		
 		echo '<a data-toggle="collapse" href="#collapse_'.$_DEVICE['id'].'" role="button" aria-expanded="false" aria-controls="collapseExample" class="badge badge-light">За всё время</a>
 		
