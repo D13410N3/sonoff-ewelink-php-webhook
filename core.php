@@ -236,7 +236,7 @@ function showTimeInterval($uptime = 100)
 		$string .= $str['m'] > 0 ? $str['m'].' мин. ' : '';
 		$string .= $str['s'] > 0 ? $str['s'].' сек. ' : '';
 		
-		return empty($string) ? 'Не использовалось' : $string;
+		return empty($string) ? '' : $string;
 	}
 
 function showError($text = '')
