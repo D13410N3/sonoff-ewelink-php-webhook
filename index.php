@@ -90,6 +90,7 @@ while($_DEVICE = mysql_fetch_assoc($q_devices))
 				if($status == 1)
 					{
 						$string_now_uptime = showTimeInterval($unixtime - $event_last['time']);
+						$string_now_uptime = empty($string_now_uptime) ? '0 сек' : $string_now_uptime;
 						echo '<span class="small">Работает</span> <span class="badge badge-info">'.$string_now_uptime.'</span>';
 					}
 				else
