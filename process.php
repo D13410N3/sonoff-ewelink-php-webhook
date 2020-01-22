@@ -34,6 +34,15 @@ if(isset($_GET['switch']) && isset($_GET['action']))
 		flock($f, LOCK_UN);
 		fclose($f);
 		
+		// собираем базу комнат
+		$q_rooms = mysql_query("SELECT * FROM `rooms`");
+		$_ROOMS = array();
+
+		while($_tmp = mysql_fetch_assoc($q_rooms))
+			{
+				$_ROOMS[$_tmp['id']] = $_tmp['name'];
+			}
+		
 		# определяем, что это за устройство
 		
 		$q_device = mysql_query("SELECT * FROM `ewelink_devices` WHERE `short_name` = '".$switch."'");
@@ -86,7 +95,7 @@ if(isset($_GET['switch']) && isset($_GET['action']))
 				
 						// пишем в чат, что чечьня круто
 						
-						$message = '<b>'.$_DEVICE['full_name'].'</b> <i>('.$strtime.')</i>'.PHP_EOL;
+						$message = '<b>'.$_DEVICE['full_name'].'</b> | '.$_ROOMS[$_DEVICE['id_room']].' <i>('.$strtime.')</i>'.PHP_EOL;
 						
 						// определяем свет или просто подача питания
 						if($_DEVICE['type'] == 'light')
