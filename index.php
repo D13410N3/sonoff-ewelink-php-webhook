@@ -164,7 +164,8 @@ while($_DEVICE = mysql_fetch_assoc($q_devices))
 		# высчитываем аптайм
 		$string = showTimeInterval($uptime);
 		
-		echo !empty($string) ? '<span class="badge badge-info">'.$string : '<span class="badge badge-warning">Не использовалось';
+		echo '<span class="small">За день:</span> ';
+		echo !empty($string) ? '<span class="badge badge-info">'.$string : '<span class="badge badge-warning">не работало';
 		echo '</span><br />
 		
 		<!--<span class="badge badge-pill badge-light">'.$c_on.' вкл.</span> / <span class="badge badge-pill badge-dark">'.$c_off.' выкл</span>
