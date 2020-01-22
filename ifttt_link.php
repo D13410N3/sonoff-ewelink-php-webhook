@@ -19,9 +19,14 @@ if(isset($_GET['id_device']) && isset($_GET['action']))
 		
 		$q_device = mysql_query("SELECT * FROM `ewelink_devices` WHERE `id` = ".$id_device);
 		
-		// die("SELECT * FROM `ewelink_devices` WHERE `id` = ".$id_device);
-		
-		// echo '<pre>'; print_r($_GET); die;
+		// собираем базу комнат
+		$q_rooms = mysql_query("SELECT * FROM `rooms`");
+		$_ROOMS = array();
+
+		while($_tmp = mysql_fetch_assoc($q_rooms))
+			{
+				$_ROOMS[$_tmp['id']] = $_tmp['name'];
+			}
 		
 		if(mysql_num_rows($q_device) != 1)
 			{
@@ -68,7 +73,7 @@ if(isset($_GET['id_device']) && isset($_GET['action']))
 		
 		// работа с tg
 		
-		$message = '<b>'.$_DEVICE['full_name'].'</b> <i>('.$strtime.')</i>'.PHP_EOL;
+		$message = '<b>'.$_DEVICE['full_name'].'</b> | '.$_ROOMS[$_DEVICE['id_room']].' <i>('.$strtime.')</i>'.PHP_EOL;
 		
 		
 		// определяем свет или просто подача питания
