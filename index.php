@@ -13,7 +13,16 @@ $view_date = explode('-', $date);
 $view_date = array_reverse($view_date);
 $view_date = implode('.', $view_date);
 
-$q_devices = mysql_query("SELECT * FROM `ewelink_devices`");
+$q_devices = mysql_query("SELECT * FROM `ewelink_devices` WHERE `deleted` = 0 ORDER BY `id_room` ASC");
+
+// запрос на список комнат
+$q_rooms = mysql_query("SELECT * FROM `rooms`");
+$_ROOMS = array();
+
+while($_tmp = mysql_fetch_assoc($q_rooms))
+	{
+		$_ROOMS[$_tmp['id']] = $_tmp['name'];
+	}
 
 ?>
 
@@ -57,7 +66,7 @@ while($_DEVICE = mysql_fetch_assoc($q_devices))
 			}
 		
 		echo '<div class="col-sm-4 device_card">';
-		echo '<div style="text-align: center"><b>'.$_DEVICE['full_name'].'</b> ';
+		echo '<div style="text-align: center"><b>'.$_DEVICE['full_name'].' | '.$_ROOMS[$_DEVICE['id_room']].'</b> ';
 		
 		if($status == 0)
 			{
