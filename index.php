@@ -119,11 +119,6 @@ while($_DEVICE = mysql_fetch_assoc($q_devices))
 				$sum_on = 0;
 				$c_on = 0;
 				
-				/*
-				echo '<pre>';
-				print_r($events);
-				echo '</pre>';
-				*/
 				
 				foreach($events as $event)
 					{

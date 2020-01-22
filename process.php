@@ -55,11 +55,7 @@ if(isset($_GET['switch']) && isset($_GET['action']))
 						$last_event = mysql_fetch_assoc($q_check);
 						
 						if($last_event['action'] == $act)
-							{
-								// последнее событие == текущему. Обновляем время последнего события вместо записи нового
-								// mysql_query("UPDATE `ewelink_events` SET `time` = ".$unixtime." WHERE `id` = ".$last_event['id']);
-								// Обновление не имеет смысла
-								
+							{							
 								$double = true;
 							}
 					}

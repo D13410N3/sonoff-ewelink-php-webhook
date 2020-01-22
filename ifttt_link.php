@@ -1,32 +1,6 @@
 <?php
 
 include_once 'core.php';
-/*
-ewelink_bath_on
-ewelink_bath_off
-
-ewelink_toilet_on
-ewelink_toilet_off
-
-ewelink_kitchen_on
-ewelink_kitchen_off
-
-ewelink_hall_on
-ewelink_hall_off
-
-ewelink_bedroom_on
-ewelink_bedroom_off
-
-ewelink_bigroom_on
-ewelink_bigroom_off
-
-ewelink_ps4_on
-ewelink_ps4_off
-
-ewelink_bedroom_socket_1_on
-ewelink_bedroom_socket_1_off
-*/
-
 autOnly();
 
 if(isset($_GET['id_device']) && isset($_GET['action']))

@@ -11,12 +11,6 @@ define('API_URL', 'https://api.telegram.org/bot'.BOT_TOKEN.'/');
 $_CHAT['id'] = $_TG['chat'];
 $_key = $_PASSWORD;
 
-/*
-$_GET['switch'] = 'bigroom';
-$_GET['action'] = 'on';
-$_GET['key'] = $_key;
-*/
-
 
 function sendMessage($id_chat, $text, $mark = '', $id_message = '')
 	{
@@ -209,10 +203,6 @@ function showWhen($wasTime = 0)
 		$now['month'] = date('m', $nowTime);
 		$now['year'] = date('Y', $nowTime);
 		
-		/*	1) day & month & year equal. Событие - сегодня
-			2) month equal; day = today - 1. Событие было вчера
-			3) Пишем дату и время
-		*/
 		
 		if($was['day'] == $now['day'] && $was['month'] == $now['month'] && $was['year'] == $now['year'])
 			{

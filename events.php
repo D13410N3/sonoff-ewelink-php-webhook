@@ -59,7 +59,7 @@ else
 				<tr>
 					<th scope="col">№</th>
 					<th scope="col">Время</th>
-					<th scope="col">Действия</th>
+					<th scope="col">Действие</th>
 				</tr>
 			</thead>
 			
