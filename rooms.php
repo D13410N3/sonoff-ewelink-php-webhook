@@ -8,11 +8,11 @@ if(isset($_GET['action']))
 	{
 		if($_GET['action'] == 'add')
 			{
-				if(isset($_POST['button']))
+				if(!empty($_POST['button']))
 					{
 						$formError = array();
 						
-						if(isset($_POST['name']))
+						if(!empty($_POST['name']))
 							{
 								$db['name'] = dbFilter($_POST['name'], 50);
 								$q_check = mysql_query("SELECT * FROM `rooms` WHERE `name` = '".$db['name']."' AND `deleted` = 0");
