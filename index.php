@@ -7,21 +7,51 @@ autOnly();
 define('TITLE', 'Все устройства');
 getHeader();
 
+// fix: rooms
+// fix: day-work-timer for previous dates if worked all day
+// added: total stats
+// fix: don't show on/off time-stats for non-today
+// removed: collapse with full stats (commented)
+// todo: today's stats
+// todo: similar col-sm-4 divs for stats (next row)
+// todo: timeBack (abs() to showTimeInterval)
 
 $date = @preg_match('#^(?:[0-9]{4})\-(?:[0-9]{2})\-(?:[0-9]{2})$#', $_GET['date']) ? $_GET['date'] : date('Y-m-d');
 $view_date = explode('-', $date);
 $view_date = array_reverse($view_date);
 $view_date = implode('.', $view_date);
 
+// Определяем даты
+$day_start = strtotime($date.' 00:00:00');
+$day_end = strtotime($date.' 23:59:59');
+$unixtime = time();
+
+// Определяем, сегодняшнюю ли дату смотрим
+$__today_date = explode('.', date('d.m.Y', $unixtime));
+$__stats_date = explode('.', date('d.m.Y', $day_start));
+
+$_TODAY = $__today_date == $__stats_date ? TRUE : FALSE;
+
+// Запрос на список всех устройств
 $q_devices = mysql_query("SELECT * FROM `ewelink_devices` WHERE `deleted` = 0 ORDER BY `id_room` ASC");
 
+// "глобальные" счетчики для всего
+$_SUM['rooms'] = 0;
+$_SUM['devices'] = 0;
+$_SUM['events'] = 0;
+$_SUM['on_events'] = 0;
+$_SUM['off_events'] = 0;
+$_SUM['uptime'] = 0;
+
+
 // запрос на список комнат
-$q_rooms = mysql_query("SELECT * FROM `rooms`");
+$q_rooms = mysql_query("SELECT * FROM `rooms` WHERE `deleted` = 0");
 $_ROOMS = array();
 
 while($_tmp = mysql_fetch_assoc($q_rooms))
 	{
 		$_ROOMS[$_tmp['id']] = $_tmp['name'];
+		$_SUM['rooms']++;
 	}
 
 ?>
@@ -50,7 +80,7 @@ while($_tmp = mysql_fetch_assoc($q_rooms))
 
 while($_DEVICE = mysql_fetch_assoc($q_devices))
 	{
-		
+		$_SUM['devices']++;
 		##################### делаем запрос на определение последнего события
 		$q_last = mysql_query("SELECT * FROM `ewelink_events` WHERE `id_device` = ".$_DEVICE['id']." ORDER BY `id` DESC LIMIT 1");
 		
@@ -83,9 +113,9 @@ while($_DEVICE = mysql_fetch_assoc($q_devices))
 		echo '</div>';
 		
 		
-		#####################  Если девайс включен - рисуем сколько уже работает, если нет - когда выключился
+		#####################  Если девайс включен - рисуем сколько уже работает, если нет - когда выключился. Только для просмотра статистики текущего дня
 		
-		if(!$noEvents)
+		if(!$noEvents && $_TODAY)
 			{
 				if($status == 1)
 					{
@@ -98,14 +128,12 @@ while($_DEVICE = mysql_fetch_assoc($q_devices))
 						$string_when_off = showWhen($event_last['time']);
 						echo '<span class="small">Выкл. с</span> <span class="badge badge-secondary">'.$string_when_off.'</span>';
 					}
+				echo '<br />';
 			}
 		
-		echo '<br />';
+		
 		
 		##################### Работаем с событиями
-		$day_start = strtotime($date." 00:00:00");
-		$day_end = strtotime($date." 23:59:59");
-		$unixtime = time();
 
 		// фикс если запускается раньше конца текущего дня
 		if($day_end > $unixtime)
@@ -183,7 +211,7 @@ while($_DEVICE = mysql_fetch_assoc($q_devices))
 				// фикс: если свет включен, но событий за сегодня нет, для подсчета аптайма за сегодня берем начало текущего дня
 				if($status == 1)
 					{
-						$uptime = $unixtime - $day_start;
+						$uptime = $day_end - $day_start;
 					}
 				else
 					{
@@ -197,12 +225,12 @@ while($_DEVICE = mysql_fetch_assoc($q_devices))
 		$string = showTimeInterval($uptime);
 		
 		#####################  Рисуем статистику
-		echo '<span class="small">Всего за день:</span> ';
+		echo '<span class="small">'.($_TODAY ? 'За сегодня' : 'Всего за '.date('d.m', $day_start)).': </span> ';
 		echo !empty($string) ? '<span class="badge badge-info">'.$string : '<span class="badge badge-warning">не работало';
 		echo '</span><br />';
 		
 		// Подсчет общей статистики
-		
+		/*
 		$q = mysql_query("SELECT * FROM `ewelink_events` WHERE `id_device` = ".$_DEVICE['id']);
 		
 		if(mysql_num_rows($q) > 0)
@@ -211,7 +239,18 @@ while($_DEVICE = mysql_fetch_assoc($q_devices))
 
 				while($event = mysql_fetch_assoc($q))
 					{
+						$_SUM['events']++;
+						
 						$events[] = array($event['action'], $event['time']);
+						
+						if($event['action'] == 0)
+							{
+								$_SUM['off_events']++;
+							}
+						else
+							{
+								$_SUM['on_events']++;
+							}
 					}
 
 
@@ -264,6 +303,7 @@ while($_DEVICE = mysql_fetch_assoc($q_devices))
 					}
 
 				$uptime = $sum_off - $sum_on;
+				$_SUM['uptime'] += $uptime;
 			}
 		else
 			{
@@ -286,14 +326,33 @@ while($_DEVICE = mysql_fetch_assoc($q_devices))
 
 				<span class="badge badge-pill badge-light">'.$c_on.' вкл.</span> / <span class="badge badge-pill badge-dark">'.$c_off.' выкл</span>
 			</div>
-		</div>
+		</div>';
+		*/
 		
-		<a href="events.php?id_device='.$_DEVICE['id'].'" class="badge badge-light">События</a>
+		echo '<a href="events.php?id_device='.$_DEVICE['id'].'" class="badge badge-light">События</a>
 		<a href="device.php?id_device='.$_DEVICE['id'].'&action=view" class="badge badge-light">Подробно</a>
 		
 		</div>
 		';
 	}
-echo '</div>';
+echo '</div><br /><br />
+
+<h5>Полная статистика:</h5>
+
+<div class="row">
+	<div class="col-sm-4">
+		<ul class="list-group list-group-flush">
+			<li class="list-group-item">Всего комнат: '.$_SUM['rooms'].'</li>
+			<li class="list-group-item">Всего устройств: '.$_SUM['devices'].'</li>
+			<li class="list-group-item">Всего событий: '.$_SUM['events'].'</li>
+			<li class="list-group-item">Всего включений: '.$_SUM['on_events'].'</li>
+			<li class="list-group-item">Всего выключений: '.$_SUM['off_events'].'</li>
+			<li class="list-group-item">Общее время работы: '.showTimeInterval($_SUM['uptime']).'</li>
+		</ul>
+	</div>
+</div>
+
+';
+
 
 getFooter();
