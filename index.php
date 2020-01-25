@@ -239,13 +239,19 @@ while($_DEVICE = mysql_fetch_assoc($q_devices))
 							}
 					
 					}
+				
 				$c_on = 0;
 				$c_off = 0;
 				
 			}
+		
+		$_SUM['on_events'] += $c_on;
+		$_SUM['off_events'] += $c_off;
 
 		# высчитываем аптайм
 		$string = showTimeInterval($uptime);
+		
+		$_SUM['uptime'] += $uptime;
 		
 		#####################  Рисуем статистику
 		echo '<span class="small">'.($_TODAY ? 'За сегодня' : 'Всего за '.date('d.m', $day_start)).': </span> ';
@@ -260,24 +266,20 @@ while($_DEVICE = mysql_fetch_assoc($q_devices))
 		</div>
 		';
 	}
-echo '</div><br /><br />
+echo '</div>'; 
+$_SUM['events'] = $_SUM['on_events'] + $_SUM['off_events'];
 
-<h5>Полная статистика:</h5>
+?>
 
 <div class="row">
-	<div class="col-sm-4">
-		<ul class="list-group list-group-flush">
-			<li class="list-group-item">Всего комнат: '.$_SUM['rooms'].'</li>
-			<li class="list-group-item">Всего устройств: '.$_SUM['devices'].'</li>
-			<li class="list-group-item">Всего событий: '.$_SUM['events'].'</li>
-			<li class="list-group-item">Всего включений: '.$_SUM['on_events'].'</li>
-			<li class="list-group-item">Всего выключений: '.$_SUM['off_events'].'</li>
-			<li class="list-group-item">Общее время работы: '.showTimeInterval($_SUM['uptime']).'</li>
-		</ul>
+	<div class="col-sm-4 device_card">
+		<div style="text-align: center"><b>Всего за <?=$_TODAY ? 'сегодня' : $view_date?></b></div>
+			<span class="small">Событий: </span> <span class="badge badge-success"><?=$_SUM['on_events']?></span> <span class="badge badge-danger"><?=$_SUM['off_events']?></span><br />
+			<span class="small">Время работы:</span> <span class="badge badge-info"><?=showTimeInterval($_SUM['uptime'])?></span>
+		</div>
 	</div>
 </div>
 
-';
 
-
+<?php
 getFooter();
