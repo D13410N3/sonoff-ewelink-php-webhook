@@ -215,10 +215,33 @@ while($_DEVICE = mysql_fetch_assoc($q_devices))
 					}
 				else
 					{
-						$uptime = 0;
+						// свет выключен, событий за прошлую дату нет -> система думает, что свет выключен
+						// ищем последнее событие до $day_start. если оно - включение, считаем, что свет работал весь день
+						$q_check_last_query = mysql_query("SELECT * FROM `ewelink_events` WHERE `id_device` = ".$_DEVICE['id']." AND `time` < ".$day_start." ORDER BY `time` DESC LIMIT 1");
+						if(mysql_num_rows($q_check_last_query) > 0)
+							{
+								$check_last_query = mysql_fetch_assoc($q_check_last_query);
+								if($check_last_query['action'] == 1)
+									{
+										// последнее событие - включение. устройство работало весь день
+										$uptime = 86399; // не спрашивайте почему
+									}
+								else
+									{
+										// последнее соыбтие - выключение. устройство не работало
+										$uptime = 0;
+									}
+							}
+						else
+							{
+								// событий вообще нет. устройство не работало, судя по всему еще ни разу
+								$uptime = 0;
+							}
+					
 					}
 				$c_on = 0;
 				$c_off = 0;
+				
 			}
 
 		# высчитываем аптайм
