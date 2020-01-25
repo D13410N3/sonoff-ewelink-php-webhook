@@ -89,6 +89,57 @@ function getHeader()
 				{
 					border-bottom: 1px solid #eee; padding: 10px;
 				}
+				
+			.material-switch > input[type="checkbox"] 
+				{
+					display: none;   
+				}
+
+			.material-switch > label 
+				{
+					cursor: pointer;
+					height: 0px;
+					position: relative; 
+					width: 40px;  
+				}
+
+			.material-switch > label::before 
+				{
+					background: rgb(0, 0, 0);
+					box-shadow: inset 0px 0px 10px rgba(0, 0, 0, 0.5);
+					border-radius: 8px;
+					content: '';
+					height: 16px;
+					margin-top: -8px;
+					position:absolute;
+					opacity: 0.3;
+					transition: all 0.4s ease-in-out;
+					width: 40px;
+				}
+			.material-switch > label::after 
+				{
+					background: rgb(255, 255, 255);
+					border-radius: 16px;
+					box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
+					content: '';
+					height: 24px;
+					left: -4px;
+					margin-top: -8px;
+					position: absolute;
+					top: -4px;
+					transition: all 0.3s ease-in-out;
+					width: 24px;
+				}
+			.material-switch > input[type="checkbox"]:checked + label::before 
+				{
+					background: inherit;
+					opacity: 0.5;
+				}
+			.material-switch > input[type="checkbox"]:checked + label::after 
+				{
+					background: inherit;
+					left: 20px;
+				}
 		</style>
 		<!-- Custom styles for this template -->
 	</head>
@@ -244,22 +295,33 @@ function showWhen($wasTime = 0)
 		return $return;
 	}
 
-function showTimeInterval($uptime = 100)
+function showTimeInterval($uptime = 100, $roundToFullDay = true)
 	{
-		$str['d'] = floor($uptime / 86400);
-		$str['h'] = floor(($uptime - $str['d'] * 86400) / 3600);
-		$str['m'] = floor(($uptime - $str['d'] * 86400 - $str['h'] * 3600) / 60);
-		$str['s'] = $uptime - $str['d'] * 86400 - $str['h'] * 3600 - $str['m'] * 60;
-		
-		
-		$string = '';
-		
-		$string .= $str['d'] > 0 ? $str['d'].' дн. ' : '';
-		$string .= $str['h'] > 0 ? $str['h'].' ч. ' : '';
-		$string .= $str['m'] > 0 ? $str['m'].' мин. ' : '';
-		$string .= $str['s'] > 0 ? $str['s'].' сек. ' : '';
-		
-		return empty($string) ? '' : $string;
+		// Небольшое пояснение:
+		// за начало дня берется 00:00:00,а за конец дня - 23:59:59
+		// Получается, что если устройство работало весь день, на выходе будет 86399 секунд, что приводит к слегка неверному результату 
+		// 23 часа, 59 минут, 59 секунд, хотя по факту устройство работало 24 часа
+		// Для использования полного интервала нужно передать функции showTimeInterval второй аргумент false
+		if($roundToFullDay && $uptime == 86399)
+			{
+				return '24 часа';
+			}
+		else
+			{
+				$str['d'] = floor($uptime / 86400);
+				$str['h'] = floor(($uptime - $str['d'] * 86400) / 3600);
+				$str['m'] = floor(($uptime - $str['d'] * 86400 - $str['h'] * 3600) / 60);
+				$str['s'] = $uptime - $str['d'] * 86400 - $str['h'] * 3600 - $str['m'] * 60;
+				
+				$string = '';
+				
+				$string .= $str['d'] > 0 ? $str['d'].' дн. ' : '';
+				$string .= $str['h'] > 0 ? $str['h'].' ч. ' : '';
+				$string .= $str['m'] > 0 ? $str['m'].' мин. ' : '';
+				$string .= $str['s'] > 0 ? $str['s'].' сек. ' : '';
+				
+				return empty($string) ? '' : $string;
+			}
 	}
 
 function showError($text = '')
