@@ -19,7 +19,16 @@ if(mysql_num_rows($q_device) != 1)
 	}
 
 $_DEVICE = mysql_fetch_assoc($q_device);
-
+$q_room = mysql_query("SELECT * FROM `rooms` WHERE `id` = ".$_DEVICE['id_room']);
+if(mysql_num_rows($q_room) < 1)
+	{
+		$room = 'Неизвестная комната';
+	}
+else
+	{
+		$_tmp = mysql_fetch_assoc($q_room);
+		$room = $_tmp['name'];
+	}
 
 if(isset($_GET['action']))
 	{
@@ -33,7 +42,7 @@ if(isset($_GET['action']))
 			}
 	}
 
-define('TITLE', $_DEVICE['full_name'].': история событий');
+define('TITLE', $_DEVICE['full_name'].' | '.$room.': история событий');
 
 getHeader();
 
