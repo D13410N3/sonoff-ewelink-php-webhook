@@ -100,7 +100,7 @@ if(isset($_GET['action']))
 									{
 										if(mysql_query("UPDATE `ewelink_devices` SET `full_name` = '".$db['full_name']."', `short_name` = '".$db['short_name']."', `id_room` = ".$db['id_room']." WHERE `id` = ".$_DEVICE['id']))
 											{
-												header("Location: index.php?upd_success");
+												header("Location: device.php?action=view&id_device=".$_DEVICE['id']);
 												exit;
 											}
 										else
@@ -254,7 +254,7 @@ if(isset($_GET['action']))
 						
 						$_ROOM = mysql_fetch_assoc($q_room);
 						
-						setTitle('Устройство '.$_DEVICE['full_name']);
+						setTitle('Устройство '.$_DEVICE['full_name'].' | '.$_ROOM['name']);
 						getHeader();
 
 						?>
