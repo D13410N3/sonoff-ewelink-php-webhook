@@ -43,13 +43,13 @@ if(isset($_GET['action']))
 									{
 										if(preg_match('#^([a-zA-Z0-9_]{1,20})$#iu', $_POST['short_name']))
 											{
-												$q_check = mysql_query("SELECT * FROM `ewelink_devices` WHERE `short_name` = '".$_POST['short_name']."' AND `id` != ".$_DEVICE['id']);
+												$db['short_name'] = dbFilter($_POST['short_name'], 20);
+												
+												$q_check = mysql_query("SELECT * FROM `ewelink_devices` WHERE `short_name` = '".$db['short_name']."' AND `id` != ".$_DEVICE['id']);
 												if(mysql_num_rows($q_check) != 0)
 													{
 														$formError[] = 'Это короткое имя уже занято';
 													}
-													
-												$db['short_name'] = dbFilter($_POST['short_name'], 20);
 											}
 										else
 											{
