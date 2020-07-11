@@ -7,15 +7,6 @@ autOnly();
 define('TITLE', 'Все устройства');
 getHeader();
 
-// fix: rooms
-// fix: day-work-timer for previous dates if worked all day
-// added: total stats
-// fix: don't show on/off time-stats for non-today
-// removed: collapse with full stats (commented)
-// todo: today's stats
-// todo: similar col-sm-4 divs for stats (next row)
-// todo: timeBack (abs() to showTimeInterval)
-
 $date = @preg_match('#^(?:[0-9]{4})\-(?:[0-9]{2})\-(?:[0-9]{2})$#', $_GET['date']) ? $_GET['date'] : date('Y-m-d');
 $view_date = explode('-', $date);
 $view_date = array_reverse($view_date);
@@ -278,8 +269,53 @@ $_SUM['events'] = $_SUM['on_events'] + $_SUM['off_events'];
 			<span class="small">Время работы:</span> <span class="badge badge-info"><?=showTimeInterval($_SUM['uptime'])?></span>
 		</div>
 	</div>
-</div>
 
 
 <?php
+
+// секция по работе с датчиками
+
+$q_sensors = mysql_query("SELECT * FROM `ewelink_sensors` WHERE `deleted` = 0 ORDER BY `id_room` ASC");
+
+if(mysql_num_rows($q_sensors) > 0)
+	{
+		echo '<h1 class="mt-5">Датчики</h1>';
+		
+		echo '<div class="row">';
+		
+		while($_SENSOR = mysql_fetch_assoc($q_sensors))
+			{
+				// последнее событие
+				// всего событий за сегодня
+				
+				$q_last = mysql_query("SELECT * FROM `ewelink_sensors_events` WHERE `id` = ".$_SENSOR['id']." ORDER BY `id` DESC LIMIT 1");
+				// die(mysql_error());
+				if(mysql_num_rows($q_last) < 1)
+					{
+						$last_time = '<span class="badge badge-warning">не работало</span>';
+					}
+				else
+					{
+						$_event = mysql_fetch_assoc($q_last);
+						$last_time = '<span class="badge badge-secondary">'.showWhen($_event['time']).'</span>';
+					}
+				
+				$c_events_today = mysql_num_rows(mysql_query("SELECT * FROM `ewelink_sensors_events` WHERE `time` > ".$day_start));
+				
+				?>
+				<div class="col-sm-4 device_card">
+					<div style="text-align: center"><b><?=$_SENSOR['full_name'].' | '.$_ROOMS[$_SENSOR['id_room']]?></b></div>
+						<span class="small">Последнее событие: </span><?=$last_time?><br />
+						<span class="small">Сегодня событий: </span><span class="badge badge-info"><?=$c_events_today?></span><br />
+						<a href="events_sensor.php?id_sensor=<?=$_SENSOR['id']?>" class="badge badge-light">События</a>
+						<a href="sensor.php?id_sensor=<?=$_SENSOR['id']?>&action=view" class="badge badge-light">Подробно</a>
+				</div>
+				
+				<?php
+			}
+		
+		echo '</div></div>';
+				
+	}
+
 getFooter();

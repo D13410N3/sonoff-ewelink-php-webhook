@@ -167,12 +167,12 @@ if(isset($_GET['switch']) && isset($_GET['action']))
 					{
 						if(isset($double))
 							{
-								$message = '<b>'.$_DEVICE['full_name'].'</b>: Задвоение последнего события проигнорировано';
+								$message = '<b>'.$_DEVICE['full_name'].'</b> | '.$_ROOMS[$_DEVICE['id_room']].': Задвоение последнего события проигнорировано';
 							}
 						
 						if(isset($first_event_off))
 							{
-								$message = '<b>'.$_DEVICE['full_name'].'</b>: Событие "выключить" проигнорировано, т.к. история событий пуста';
+								'<b>'.$_DEVICE['full_name'].'</b> | '.$_ROOMS[$_DEVICE['id_room']].': Событие "выключить" проигнорировано, т.к. история событий пуста';
 							}
 					}
 			}

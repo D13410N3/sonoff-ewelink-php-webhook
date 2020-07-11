@@ -20,7 +20,7 @@ if(isset($_GET['sensor']))
 		$q = mysql_query("SELECT * FROM `ewelink_sensors` WHERE `short_name` = '".$sensor."'");
 		if(mysql_num_rows($q) < 1)
 			{
-				die(json_encode(array('error' => 'No such device'])));
+				die(json_encode(array('error' => 'No such device')));
 			}
 		
 		$_SENSOR = mysql_fetch_assoc($q);
@@ -44,7 +44,7 @@ if(isset($_GET['sensor']))
 				if($_SENSOR['notify'] == 1)
 					{
 						$_notify = true;
-						$_message = '<b>'.$_SENSOR['name'].'</b> | '.$_ROOM['name'].' <i>('.$strtime.')</i>'.PHP_EOL;
+						$_message = '<b>'.$_SENSOR['full_name'].'</b> | '.$_ROOM['name'].' <i>('.$strtime.')</i>'.PHP_EOL;
 						$_message .= 'Сработал датчик';
 					}
 				else

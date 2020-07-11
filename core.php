@@ -55,8 +55,6 @@ function getHeader()
 		<!-- Bootstrap core CSS -->
 		<link href="bootstrap-4.4.1-dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
 
-		<!-- Favicons -->
-
 		<meta name="theme-color" content="#563d7c">
 
 
@@ -89,57 +87,6 @@ function getHeader()
 				{
 					border-bottom: 1px solid #eee; padding: 10px;
 				}
-				
-			.material-switch > input[type="checkbox"] 
-				{
-					display: none;   
-				}
-
-			.material-switch > label 
-				{
-					cursor: pointer;
-					height: 0px;
-					position: relative; 
-					width: 40px;  
-				}
-
-			.material-switch > label::before 
-				{
-					background: rgb(0, 0, 0);
-					box-shadow: inset 0px 0px 10px rgba(0, 0, 0, 0.5);
-					border-radius: 8px;
-					content: '';
-					height: 16px;
-					margin-top: -8px;
-					position:absolute;
-					opacity: 0.3;
-					transition: all 0.4s ease-in-out;
-					width: 40px;
-				}
-			.material-switch > label::after 
-				{
-					background: rgb(255, 255, 255);
-					border-radius: 16px;
-					box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
-					content: '';
-					height: 24px;
-					left: -4px;
-					margin-top: -8px;
-					position: absolute;
-					top: -4px;
-					transition: all 0.3s ease-in-out;
-					width: 24px;
-				}
-			.material-switch > input[type="checkbox"]:checked + label::before 
-				{
-					background: inherit;
-					opacity: 0.5;
-				}
-			.material-switch > input[type="checkbox"]:checked + label::after 
-				{
-					background: inherit;
-					left: 20px;
-				}
 		</style>
 		<!-- Custom styles for this template -->
 	</head>
@@ -165,6 +112,10 @@ function getHeader()
 
 					<li class="nav-item">
 						<a class="nav-link" href="device.php?action=add">Добавить устройство</a>
+					</li>
+					
+					<li class="nav-item">
+						<a class="nav-link" href="sensor.php?action=add">Добавить датчик</a>
 					</li>
 
 					<li class="nav-item">

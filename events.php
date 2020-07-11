@@ -42,11 +42,11 @@ if(isset($_GET['action']))
 			}
 	}
 
-define('TITLE', $_DEVICE['full_name'].' | '.$room.': история событий');
+define('TITLE', $_DEVICE['full_name'].' | '.$room.': история событий (300)');
 
 getHeader();
 
-$q_events = mysql_query("SELECT * FROM `ewelink_events` WHERE `id_device` = ".$_DEVICE['id']." ORDER BY `time` DESC");
+$q_events = mysql_query("SELECT * FROM `ewelink_events` WHERE `id_device` = ".$_DEVICE['id']." ORDER BY `time` DESC LIMIT 300");
 
 if(mysql_num_rows($q_events) == 0)
 	{
