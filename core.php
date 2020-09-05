@@ -1,14 +1,28 @@
 ﻿<?php
 
 require_once 'settings.php';
+
 @mysql_connect($_DATABASE['host'], $_DATABASE['user'], $_DATABASE['password']) or die(mysql_error());
 mysql_select_db($_DATABASE['db']) or die(mysql_error());
 mysql_set_charset('utf8');
 
-define('BOT_TOKEN', $_TG['token']);
-define('API_URL', 'https://api.telegram.org/bot'.BOT_TOKEN.'/');
+$q_settings = mysql_query("SELECT * FROM `settings` LIMIT 1");
+if(mysql_num_rows($q_settings) != 1)
+	{
+		die('Отсутствует строка конфигурации');
+	}
+else
+	{
+		$_SETTINGS = mysql_fetch_assoc($q_settings);
+	}
 
-$_CHAT['id'] = $_TG['chat'];
+
+$_IFTTT['key'] = $_SETTINGS['ifttt_key'];
+$_PASSWORD = $_SETTINGS['mgmt_password'];
+
+define('API_URL', 'https://api.telegram.org/bot'.$_SETTINGS['telegram_token'].'/');
+
+$_CHAT['id'] = $_SETTINGS['telegram_chat_id'];
 $_key = $_PASSWORD;
 
 
@@ -109,18 +123,24 @@ function getHeader()
 					<li class="nav-item">
 						<a class="nav-link" href="index.php?">Все устройства</a>
 					</li>
-
-					<li class="nav-item">
-						<a class="nav-link" href="device.php?action=add">Добавить устройство</a>
-					</li>
 					
-					<li class="nav-item">
-						<a class="nav-link" href="sensor.php?action=add">Добавить датчик</a>
-					</li>
-
 					<li class="nav-item">
 						<a class="nav-link" href="rooms.php">Комнаты</a>
 					</li>
+					
+					<li class="nav-item dropdown">
+						<a class="nav-link dropdown-toggle" href="#" id="dropdown01" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Добавить</a>
+						<div class="dropdown-menu" aria-labelledby="dropdown01">
+							<a class="dropdown-item" href="device.php?action=add">Устройство Ewelink</a>
+							<a class="dropdown-item" href="sensor.php?action=add">Датчик</a>
+							<a class="dropdown-item" href="wireless_client.php?action=add">Wi-Fi устройство</a>
+						</div>
+					</li>
+					
+					<li class="nav-item">
+						<a class="nav-link" href="site_settings.php">Настройки</a>
+					</li>
+					
 				</ul>
 
 				<ul class="navbar-nav ml-auto">
@@ -304,4 +324,151 @@ function fatalError($text = 'Ошибка')
 function dbFilter($string, $length)
 	{
 		return mb_substr(htmlspecialchars(mysql_real_escape_string($string)), 0, $length, 'utf-8');
+	}
+
+// функция включения реле через IFTTT
+
+function switchRelay($relay = '', $action = 'off', $byScript = false, $notify = false)
+	{
+		global $_CHAT; // вот такая вот я мразь, да
+		global $_IFTTT; // больше глобалок богу глобалок 
+		
+		$unixtime = time;
+		
+		/*
+		
+		1) Делаем запрос к IFTTT
+		2) Записываем событие в свою БД
+		3) Шлем сообщение в Telegram		
+		*/
+		
+		$output = [];
+		
+		if(empty($relay))
+			{
+				// пустое имя
+				$output['status'] = false;
+				$output['error'] = 'Empty relay name';
+			}
+		else
+			{
+				$query_name = dbFilter($relay, 30);
+				$q = mysql_query("SELECT * FROM `ewelink_devices` WHERE `short_name` = '".$query_name."'");
+				if(mysql_num_rows($q) < 1)
+					{
+						// не найдено
+						$output['status'] = false;
+						$output['error'] = 'Relay not found';
+					}
+				else
+					{
+						// ошибок нет, продолжаем 
+						$_DEVICE = mysql_fetch_assoc($q);
+						
+						$action = $action == 'on' ? 'on' : 'off';
+						$act = $action == 'on' ? 1 : 0;
+						$ru_action = $action == 'on' ? 'вкл.' : 'выкл.';
+						
+						$link = 'https://maker.ifttt.com/trigger/ewelink_'.$_DEVICE['short_name'].'_'.$action.'/with/key/'.$_IFTTT['key'];
+						
+						// making a request 
+						$ch = curl_init($link);
+						curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+						curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+						curl_setopt($ch, CURLOPT_USERAGENT, 'PHPscript for Smarthome by D13410N3/1.0');
+						
+						$a = curl_exec($ch);
+						
+						
+						//// записываем событие 
+						mysql_query("INSERT INTO `ewelink_events`(`id_device`, `time`, `action`) VALUES (".$_DEVICE['id'].", ".$unixtime.", ".$act.")");
+						
+						if(@$notify === true)
+							{
+								// собираем базу комнат
+								$q_rooms = mysql_query("SELECT * FROM `rooms`");
+								$_ROOMS = array();
+
+								while($_tmp = mysql_fetch_assoc($q_rooms))
+									{
+										$_ROOMS[$_tmp['id']] = $_tmp['name'];
+									}
+								
+								$message = '<b>'.$_DEVICE['full_name'].'</b> | '.$_ROOMS[$_DEVICE['id_room']].' <i>('.$strtime.')</i>'.PHP_EOL;
+		
+		
+								// определяем свет или просто подача питания
+								if($_DEVICE['type'] == 'light')
+									{
+										$message .= 'свет ';
+									}
+								else
+									{
+										$message .= 'устройство ';
+									}
+								
+								$message .= '<i>'.$ru_action.'</i>';
+								
+								if(@$byScript === true)
+									{
+										$message .= ' (скриптом)';
+									}
+								
+								if($act == 0)
+									{
+										$q_last = mysql_query("SELECT * FROM `ewelink_events` WHERE `id_device` = ".$_DEVICE['id']." AND `action` = 1 ORDER BY `id` DESC LIMIT 1");
+										
+										// die(mysql_error());
+										
+										if(mysql_num_rows($q_last) == 0)
+											{
+												$string_duration = 'Не найдено время включения';
+											}
+										else
+											{
+												$last_session = mysql_fetch_assoc($q_last);
+												
+												$duration = $unixtime - $last_session['time'];
+												
+												$days = floor($duration / 86400);
+												$hours = floor(($duration - $days * 86400) / 3600);
+												$minutes = floor(($duration - $days * 86400 - $hours * 3600) / 60);
+												$seconds = $duration - $days * 86400 - $hours * 3600 - $minutes * 60;
+												
+												$string_duration = 'Продолжительность сессии: ';
+												
+												if($days > 0)
+													{
+														$string_duration .= $days.' дн. ';
+													}
+												
+												if($hours > 0)
+													{
+														$string_duration .= $hours.' ч. ';
+													}
+												
+												if($minutes > 0)
+													{
+														$string_duration .= $minutes.' мин. ';
+													}
+												
+												if($seconds > 0)
+													{
+														$string_duration .= $seconds.' сек.';
+													}
+												
+											}
+										
+										// контактен....ция строк 
+										
+										$message .= PHP_EOL;
+										$message .= $string_duration;
+										
+									}
+								sendMessage($_CHAT['id'], $message, 'HTML');
+								
+							}
+						
+					}
+			}
 	}
