@@ -37,10 +37,26 @@ if(isset($_GET['action']))
 								$formError[] = 'Укажите имя устройства';
 							}
 						
+						if(!empty($_POST['short_name']))
+							{
+								if(preg_match('#^([a-zA-Z0-9_]{1,20})$#iu', $_POST['short_name']))
+									{
+										$db['short_name'] = dbFilter($_POST['short_name'], 20);
+									}
+								else
+									{
+										$formError[] = 'Краткое название - от 1 до 20 символов латинского алфавита и цифр';
+									}
+							}
+						else
+							{
+								$formError[] = 'Укажите краткое имя - от 1 до 20 символов латинского алфавита и цифр';
+							}
+						
 						// first check
 						if(empty($formError))
 							{
-								$q_check = mysql_query("SELECT * FROM `wireless_clients` WHERE `mac` = '".$db['mac']."' OR `name` = '".$db['name']."'");
+								$q_check = mysql_query("SELECT * FROM `wireless_clients` WHERE `mac` = '".$db['mac']."' OR `name` = '".$db['name']."' OR `short_name` = '".$db['short_name']."'");
 								if(mysql_num_rows($q_check) != 0)
 									{
 										$formError[] = 'Устройство с таким именем и/или MAC-адресом уже есть';
@@ -49,7 +65,7 @@ if(isset($_GET['action']))
 						
 						if(empty($formError))
 							{
-								if(mysql_query("INSERT INTO `wireless_clients`(`mac`, `name`, `deleted`, `status`, `time_added`, `time_update`) VALUES ('".$db['mac']."', '".$db['name']."', 0, 0, ".time().", ".time().")"))
+								if(mysql_query("INSERT INTO `wireless_clients`(`mac`, `name`, `deleted`, `status`, `time_added`, `time_update`, `short_name`) VALUES ('".$db['mac']."', '".$db['name']."', 0, 0, ".time().", ".time().", '".$db['short_name']."')"))
 									{
 										$__id = mysql_insert_id();
 										
@@ -75,6 +91,11 @@ if(isset($_GET['action']))
 						<div class="col-sm">
 							Название устройства:<br />
 							<input type="text" required="required" name="name" class="form-control" value="<?=isset($_POST['name']) ? dbFilter($_POST['name'], 50) : ''?>" />
+						</div>
+						
+						<div class="col-sm">
+							Краткое название (a-z, 0-9, до 20 символов):<br />
+							<input type="text" required="required" name="short_name" class="form-control" value="<?=isset($_POST['short_name']) ? dbFilter($_POST['short_name'], 100) : ''?>" />
 						</div>
 						
 						<div class="col-sm">
@@ -166,11 +187,33 @@ if(isset($_GET['action']))
 										$formError[] = 'Укажите имя устройства';
 									}
 								
+								if(!empty($_POST['short_name']))
+									{
+										if(preg_match('#^([a-zA-Z0-9_]{1,20})$#iu', $_POST['short_name']))
+											{
+												$db['short_name'] = dbFilter($_POST['short_name'], 20);
+												
+												$q_check = mysql_query("SELECT * FROM `wireless_clients` WHERE `short_name` = '".$db['short_name']."' AND `id` != ".$_CLIENT['id']);
+												if(mysql_num_rows($q_check) != 0)
+													{
+														$formError[] = 'Это короткое имя уже занято';
+													}
+											}
+										else
+											{
+												$formError[] = 'Код устройства - от 1 до 20 символов латинского алфавита и цифр';
+											}
+									}
+								else
+									{
+										$formError[] = 'Код устройства - от 1 до 20 символов латинского алфавита и цифр';
+									}
+								
 								if(empty($formError))
 									{
-										if(mysql_query("UPDATE `wireless_clients` SET `mac` = '".$db['mac']."', `name` = '".$db['name']."' WHERE `id` = ".$_CLIENT['id']))
+										if(mysql_query("UPDATE `wireless_clients` SET `mac` = '".$db['mac']."', `name` = '".$db['name']."', `short_name` = '".$db['short_name']."' WHERE `id` = ".$_CLIENT['id']))
 											{
-												header('Locatiuon: wireless_client.php?action=view&id='.$_CLIENT['id']);
+												header('Location: wireless_client.php?action=view&id='.$_CLIENT['id']);
 												exit;
 											}
 										else
@@ -192,6 +235,11 @@ if(isset($_GET['action']))
 								<div class="col-sm">
 									Название устройства:<br />
 									<input type="text" required="required" name="name" class="form-control" value="<?=isset($_POST['name']) ? dbFilter($_POST['name'], 50) : $_CLIENT['name']?>" />
+								</div>
+								
+								<div class="col-sm">
+									Код устройства (a-z, 0-9, до 20 символов):<br />
+									<input type="text" required="required" name="short_name" class="form-control" value="<?=isset($_POST['short_name']) ? dbFilter($_POST['short_name'], 100) : $_CLIENT['short_name']?>" />
 								</div>
 								
 								<div class="col-sm">
@@ -286,8 +334,24 @@ if(isset($_GET['action']))
 						?>
 						
 						<dl class="row">
-							<dt class="col-sm-3">Название</dt>
-							<dd class="col-sm-9"><?=$_CLIENT['name']?></dd>
+							<dt class="col-sm-3">Статус</dt>
+							<dd class="col-sm-9"><?=$_CLIENT['status'] == 1 ? '<span class="badge badge-success">Online</span> <span class="badge badge-info">'.$_CLIENT['interface'].'</span>' : '<span class="badge badge-secondary">Offline</span>'?> (<?=showTimeInterval(time() - $_CLIENT['time_update'])?>)</dd>
+							<?php
+								if($_CLIENT['status'] == 1)
+									{
+										list($rx, $tx) = explode(',', $_CLIENT['bytes']);
+										?>
+											<dt class="col-sm-3">Скорость соединения (прием/передача)</dt>
+											<dd class="col-sm-9"><span class="badge badge-info"><?=$_CLIENT['tx_rate']?></span> / <span class="badge badge-info"><?=$_CLIENT['rx_rate']?></span></dd>
+										
+											<dt class="col-sm-3">Данные (принято/передано)</dt>
+											<dd class="col-sm-9"><span class="badge badge-info"><?=formatBytes($rx, 2)?></span> / <span class="badge badge-info"><?=formatBytes($tx, 2)?></span></dd>
+										
+										<?php
+									}
+							?>
+							<dt class="col-sm-3">Код устройства</dt>
+							<dd class="col-sm-9"><?=$_CLIENT['short_name']?></dd>
 							
 							<dt class="col-sm-3">MAC-адрес</dt>
 							<dd class="col-sm-9"><?=$_CLIENT['mac']?></dd>
