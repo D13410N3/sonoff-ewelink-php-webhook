@@ -83,7 +83,7 @@ if(!empty($_SETTINGS['mikrotik_address']) && !empty($_SETTINGS['mikrotik_port'])
 								$mac = str_replace(':', '', $result[$key]['mac-address']);
 								if(isset($db_macs[$mac]))
 									{
-										$_MACS[$mac] = 1;
+										$_MACS[$mac] = array('interface' => $result[$key]['interface'], 'rx_rate' => $result[$key]['rx-rate'], 'tx_rate' => $result[$key]['tx-rate'], 'bytes' => $result[$key]['bytes']);
 									}
 							}
 						
@@ -101,13 +101,14 @@ if(!empty($_SETTINGS['mikrotik_address']) && !empty($_SETTINGS['mikrotik_port'])
 										// Проверяем, в сети ли устройство:
 										if(isset($_MACS[$_MAC]))
 											{
-												// Устройство было и остается в сети. Nothing to do
-												echo $_MAC.' already online - nothing to do...'.PHP_EOL;
+												// Устройство было и остается в сети. 
+												echo $_MAC.' already online - updating stats...'.PHP_EOL;
+												mysql_query("UPDATE `wireless_clients` SET `interface` = '".$_MACS[$_MAC]['interface']."', `tx_rate` = '".$_MACS[$_MAC]['tx_rate']."', `rx_rate` = '".$_MACS[$_MAC]['rx_rate']."', `bytes` = '".$_MACS[$_MAC]['bytes']."' WHERE `id` = ".$info['id']);
 											}
 										else
 											{
 												## Фиксируем отключение устройства:
-												mysql_query("UPDATE `wireless_clients` SET `status` = 0, `time_update` = ".$unixtime." WHERE `id` = ".$info['id']);
+												mysql_query("UPDATE `wireless_clients` SET `status` = 0, `time_update` = ".$unixtime.", `tx_rate` = 0, `rx_rate` = 0, `bytes` = 0, `interface` = 0 WHERE `id` = ".$info['id']);
 												
 												## Записываем событие в БД:
 												mysql_query("INSERT INTO `wireless_clients_events`(`id_client`, `status`, `time`) VALUES (".$info['id'].", 0, ".$unixtime.")");
@@ -115,7 +116,7 @@ if(!empty($_SETTINGS['mikrotik_address']) && !empty($_SETTINGS['mikrotik_port'])
 												## Пишем в телегу, что кое-кто отключился
 												$message = '<b>'.$info['name'].'</b>: Устройство отключилось <i>('.$strtime.')</i>';
 												sendMessage($_CHAT['id'], $message, 'HTML');
-												echo $_MAC.' NOW online - information saved...'.PHP_EOL;
+												echo $_MAC.' NOW offline - information saved...'.PHP_EOL;
 											}
 									}
 								elseif($info['status'] == 0)
@@ -129,7 +130,7 @@ if(!empty($_SETTINGS['mikrotik_address']) && !empty($_SETTINGS['mikrotik_port'])
 										else
 											{
 												## Фиксируем включение устройства:
-												mysql_query("UPDATE `wireless_clients` SET `status` = 1, `time_update` = ".$unixtime." WHERE `id` = ".$info['id']);
+												mysql_query("UPDATE `wireless_clients` SET `status` = 1, `time_update` = ".$unixtime.", `interface` = '".$_MACS[$_MAC]['interface']."', `tx_rate` = '".$_MACS[$_MAC]['tx_rate']."', `rx_rate` = '".$_MACS[$_MAC]['rx_rate']."', `bytes` = '".$_MACS[$_MAC]['bytes']."' WHERE `id` = ".$info['id']);
 												
 												## Записываем событие в БД:
 												mysql_query("INSERT INTO `wireless_clients_events`(`id_client`, `status`, `time`) VALUES (".$info['id'].", 1, ".$unixtime.")");
