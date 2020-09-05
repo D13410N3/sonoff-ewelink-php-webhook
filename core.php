@@ -472,3 +472,11 @@ function switchRelay($relay = '', $action = 'off', $byScript = false, $notify = 
 					}
 			}
 	}
+
+function formatBytes($size, $precision = 2)
+{
+    $base = log($size, 1024);
+    $suffixes = array('байт', 'кб', 'мб', 'гб', 'тб');   
+
+    return round(pow(1024, $base - floor($base)), $precision) .' '. $suffixes[floor($base)];
+}
