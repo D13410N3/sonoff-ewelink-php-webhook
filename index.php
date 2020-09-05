@@ -4,7 +4,7 @@ include_once 'core.php';
 
 autOnly();
 
-define('TITLE', 'Все устройства');
+define('TITLE', 'Умный дом');
 getHeader();
 
 $date = @preg_match('#^(?:[0-9]{4})\-(?:[0-9]{2})\-(?:[0-9]{2})$#', $_GET['date']) ? $_GET['date'] : date('Y-m-d');
@@ -45,6 +45,16 @@ while($_tmp = mysql_fetch_assoc($q_rooms))
 		$_SUM['rooms']++;
 	}
 
+// Определяем время последнего события (relay)
+$q_last_event = mysql_query("SELECT * FROM `ewelink_events` ORDER BY `id` DESC LIMIT 1");
+if(mysql_num_rows($q_last_event) == 1)
+	{
+		$__last_event = mysql_fetch_assoc($q_last_event);
+	}
+else
+	{
+		$__last_event['time'] = $unixtime;
+	}
 ?>
 
 <div class="alert alert-primary" role="alert">
@@ -64,6 +74,8 @@ while($_tmp = mysql_fetch_assoc($q_rooms))
 		</div>
 	</form>
 </div>
+
+<span class="small">Последнее событие: <?=showTimeInterval($unixtime - $__last_event['time'])?> назад</span>
 
 <div class="row">
 
@@ -272,23 +284,43 @@ $_SUM['events'] = $_SUM['on_events'] + $_SUM['off_events'];
 
 
 <?php
-
-// секция по работе с датчиками
+##############################################################################################
+##############################################################################################
+##############################################################################################
+#################################СЕКЦИЯ ПО РАБОТЕ С ДАТЧИКАМИ#################################
+##############################################################################################
+##############################################################################################
+##############################################################################################
 
 $q_sensors = mysql_query("SELECT * FROM `ewelink_sensors` WHERE `deleted` = 0 ORDER BY `id_room` ASC");
 
+// Определяем время последнего события (sensor)
+$q_last_event = mysql_query("SELECT * FROM `ewelink_sensors_events` ORDER BY `id` DESC LIMIT 1");
+if(mysql_num_rows($q_last_event) == 1)
+	{
+		$__last_event = mysql_fetch_assoc($q_last_event);
+	}
+else
+	{
+		$__last_event['time'] = $unixtime;
+	}
+
 if(mysql_num_rows($q_sensors) > 0)
 	{
-		echo '<h1 class="mt-5">Датчики</h1>';
+		?>
+		<h1 class="mt-5">Датчики</h1>
+		<span class="small">Последнее событие: <?=showTimeInterval($unixtime - $__last_event['time'])?> назад</span>
+		<div class="row">
 		
-		echo '<div class="row">';
+		<?php
 		
 		while($_SENSOR = mysql_fetch_assoc($q_sensors))
 			{
 				// последнее событие
 				// всего событий за сегодня
+				// всего событий за всё время
 				
-				$q_last = mysql_query("SELECT * FROM `ewelink_sensors_events` WHERE `id` = ".$_SENSOR['id']." ORDER BY `id` DESC LIMIT 1");
+				$q_last = mysql_query("SELECT * FROM `ewelink_sensors_events` WHERE `id_sensor` = ".$_SENSOR['id']." ORDER BY `id` DESC LIMIT 1");
 				// die(mysql_error());
 				if(mysql_num_rows($q_last) < 1)
 					{
@@ -300,13 +332,15 @@ if(mysql_num_rows($q_sensors) > 0)
 						$last_time = '<span class="badge badge-secondary">'.showWhen($_event['time']).'</span>';
 					}
 				
-				$c_events_today = mysql_num_rows(mysql_query("SELECT * FROM `ewelink_sensors_events` WHERE `time` > ".$day_start));
+				$c_events_today = mysql_num_rows(mysql_query("SELECT * FROM `ewelink_sensors_events` WHERE `id_sensor` = ".$_SENSOR['id']." AND `time` > ".$day_start." AND `time` < ".$day_end));
+				$c_events_overall = mysql_num_rows(mysql_query("SELECT * FROM `ewelink_sensors_events` WHERE `id_sensor` = ".$_SENSOR['id']));
 				
 				?>
 				<div class="col-sm-4 device_card">
 					<div style="text-align: center"><b><?=$_SENSOR['full_name'].' | '.$_ROOMS[$_SENSOR['id_room']]?></b></div>
 						<span class="small">Последнее событие: </span><?=$last_time?><br />
-						<span class="small">Сегодня событий: </span><span class="badge badge-info"><?=$c_events_today?></span><br />
+						<span class="small"><?=$_TODAY ? 'Сегодня' : 'За '.date('d.m', $day_start)?> событий: </span><span class="badge badge-info"><?=$c_events_today?></span><br />
+						<span class="small">Всего событий: </span><span class="badge badge-info"><?=$c_events_overall?></span><br />
 						<a href="events_sensor.php?id_sensor=<?=$_SENSOR['id']?>" class="badge badge-light">События</a>
 						<a href="sensor.php?id_sensor=<?=$_SENSOR['id']?>&action=view" class="badge badge-light">Подробно</a>
 				</div>
@@ -314,8 +348,65 @@ if(mysql_num_rows($q_sensors) > 0)
 				<?php
 			}
 		
-		echo '</div></div>';
+		echo '</div>';
 				
+	}
+
+##############################################################################################
+##############################################################################################
+##############################################################################################
+##############################СЕКЦИЯ ПО РАБОТЕ С WI-FI КЛИЕНТАМИ##############################
+##############################################################################################
+##############################################################################################
+##############################################################################################
+
+if(!empty($_SETTINGS['mikrotik_address']) && !empty($_SETTINGS['mikrotik_port']) && !empty($_SETTINGS['mikrotik_username']) && !empty($_SETTINGS['mikrotik_password']))
+	{
+		$q_clients = mysql_query("SELECT * FROM `wireless_clients` WHERE `deleted` = 0 ORDER BY `id` ASC");
+
+		if(mysql_num_rows($q_clients) > 0)
+			{
+				echo '<h1 class="mt-5">Wi-Fi устройства</h1>';
+				echo '<span class="small">Последнее обновление: '.showTimeInterval($unixtime - $_SETTINGS['last_mikrotik_update']).' назад</span>';
+				echo '<div class="row">';
+				
+				while($_CLIENT = mysql_fetch_assoc($q_clients))
+					{
+						// Online/offline
+						// Последнее событие - <time>
+						
+						// on/off
+						if($_CLIENT['status'] == 0)
+							{
+								$__status = '<span class="badge badge-secondary">Offline</span>';
+								$__last_event = '<span class="badge badge-secondary">'.showTimeInterval($unixtime - $_CLIENT['time_update']).'</span>';
+							}
+						else
+							{
+								$__status = '<span class="badge badge-success">Online</span>';
+								$__last_event = '<span class="badge badge-info">'.showTimeInterval($unixtime - $_CLIENT['time_update']).'</span>';
+							}
+						
+
+						
+						// last event
+						
+						
+						////// отрисовка
+						?>
+						<div class="col-sm-4 device_card">
+							<div style="text-align: center"><b><?=$_CLIENT['name']?></b></div>
+								<span class="small">Статус: </span><?=$__status?><br />
+								<span class="small"><?=$_CLIENT['status'] == 0 ? 'Downtime' : 'Uptime'?>: </span><?=$__last_event?><br />
+								<a href="events_wireless.php?id=<?=$_CLIENT['id']?>" class="badge badge-light">События</a>
+								<a href="wireless_client.php?id=<?=$_CLIENT['id']?>&action=view" class="badge badge-light">Подробно</a>
+						</div>
+						
+						
+						<?php
+					}
+				echo '</div></div>';
+			}
 	}
 
 getFooter();
