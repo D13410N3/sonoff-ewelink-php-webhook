@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Хост: localhost
--- Время создания: Сен 05 2020 г., 10:50
+-- Время создания: Сен 05 2020 г., 22:05
 -- Версия сервера: 10.0.38-MariaDB-0ubuntu0.16.04.1
 -- Версия PHP: 7.0.33-12+ubuntu16.04.1+deb.sury.org+1
 
@@ -149,7 +149,12 @@ CREATE TABLE `wireless_clients` (
   `status` tinyint(4) DEFAULT NULL,
   `deleted` tinyint(4) DEFAULT '0',
   `time_update` int(4) DEFAULT NULL,
-  `time_added` int(11) DEFAULT NULL
+  `time_added` int(11) DEFAULT NULL,
+  `short_name` tinytext,
+  `tx_rate` tinytext,
+  `rx_rate` tinytext,
+  `bytes` tinytext,
+  `interface` tinytext
 ) ENGINE=Aria DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
