@@ -4,6 +4,22 @@ autOnly();
 
 if(isset($_GET['action']))
 	{
+		// Загрузим из БД информацию о всех типах датчиков 
+		$q_SENSORS_TYPES = mysql_query("SELECT * FROM `ewelink_sensors_types` ORDER BY `id` ASC");
+		$_SENSORS_TYPES = [];
+		while($_tmp = mysql_fetch_assoc($q_SENSORS_TYPES))
+			{
+				$_SENSORS_TYPES[$_tmp['id']] = $_tmp['name'];
+			}
+		
+		// Загрузим из БД информацию обо всех комнатах
+		$q_rooms = mysql_query("SELECT * FROM `rooms` WHERE `deleted` = 0 ORDER BY `id` ASC");
+		$_ROOM = [];
+		while($_tmp = mysql_fetch_assoc($q_rooms))
+			{
+				$_ROOM[$_tmp['id']] = $_tmp['name'];
+			}
+		
 		if($_GET['action'] == 'edit' OR $_GET['action'] == 'delete' OR $_GET['action'] == 'view')
 			{
 				if(empty($_GET['id_sensor']))
@@ -44,13 +60,13 @@ if(isset($_GET['action']))
 								
 								if(!empty($_POST['short_name']))
 									{
-										if(!preg_match('#^([a-zA-Z0-9_]{1,20})$#iu', $_POST['short_name']))
+										if(!preg_match('#^([a-zA-Z0-9_]{3,30})$#iu', $_POST['short_name']))
 											{
 												$formError[] = 'Короткое название датчика должно содержать от 3 до 20 символов a-z, цифр и нижнего подчеркивания';
 											}
 										else
 											{
-												$db['short_name'] = dbFilter($_POST['short_name'], 20);
+												$db['short_name'] = dbFilter($_POST['short_name'], 30);
 												
 												$q_check = mysql_query("SELECT * FROM `ewelink_sensors` WHERE `short_name` = '".$db['short_name']."' AND `id` != ".$_SENSOR['id']);
 												
@@ -70,8 +86,7 @@ if(isset($_GET['action']))
 									{
 										$db['id_room'] = (int)$_POST['id_room'];
 										
-										$q_check = mysql_query("SELECT * FROM `rooms` WHERE `deleted` = 0 AND `id` = ".$db['id_room']);
-										if(mysql_num_rows($q_check) != 1)
+										if(empty($_ROOM[$db['id_room']]))
 											{
 												$formError[] = 'Комната не найдена';
 											}
@@ -79,6 +94,20 @@ if(isset($_GET['action']))
 								else
 									{
 										$db['id_room'] = $_SENSOR['id_room'];
+									}
+								
+								if(!empty($_POST['type']))
+									{
+										$db['type'] = (int)$_POST['type'];
+										
+										if(empty($_SENSORS_TYPES[$db['type']]))
+											{
+												$formError[] = 'Неизвестный тип датчика';
+											}
+									}
+								else
+									{
+										$db['type'] = $_SENSOR['type'];
 									}
 								
 								if(isset($_POST['notify']))
@@ -92,7 +121,7 @@ if(isset($_GET['action']))
 								
 								if(empty($formError))
 									{
-										if(mysql_query("UPDATE `ewelink_sensors` SET `full_name` = '".$db['full_name']."', `short_name` = '".$db['short_name']."', `id_room` = ".$db['id_room'].", `notify` = ".$db['notify']." WHERE `id` = ".$_SENSOR['id']))
+										if(mysql_query("UPDATE `ewelink_sensors` SET `full_name` = '".$db['full_name']."', `short_name` = '".$db['short_name']."', `id_room` = ".$db['id_room'].", `notify` = ".$db['notify'].", `type` = ".$db['type']." WHERE `id` = ".$_SENSOR['id']))
 											{
 												header('Location: sensor.php?action=view&id_sensor='.$_SENSOR['id']);
 												exit;
@@ -125,24 +154,31 @@ if(isset($_GET['action']))
 								
 								<div class="col-sm">
 									Комната:<br />
-									<?php
-									$q_rooms = mysql_query("SELECT * FROM `rooms` WHERE `deleted` = 0 ORDER BY `name` ASC");
-									
-									if(mysql_num_rows($q_rooms) == 0)
-										{
-											echo showError('Комнаты не найдены. <a href="rooms.php?action=add">Создать комнату</a>');
-										}
-									else
-										{
-											echo '<select class="form-control" name="id_room">';
-											while($_ROOM = mysql_fetch_assoc($q_rooms))
+									<select class="form-control" name="id_room">
+											
+										<?php
+											foreach($_ROOM as $tmp['id_room'] => $tmp['room_name'])
 												{
-													echo '<option value="'.$_ROOM['id'].'"'.($_SENSOR['id_room'] == $_ROOM['id'] ? ' selected="selected"' : '').'>'.$_ROOM['name'].'</option>'.PHP_EOL;
+													echo '<option value="'.$tmp['id_room'].'"'.($_SENSOR['id_room'] == $tmp['id_room'] ? ' selected="selected"' : '').'>'.$tmp['room_name'].'</option>'.PHP_EOL;
 												}
 											echo '</select>';
-										}
 								
-									?>
+										?>
+								</div>
+								
+								<div class="col-sm">
+									Тип датчика:<br />
+									<select class="form-control" name="type">
+										
+										<?php
+											foreach($_SENSORS_TYPES as $tmp['id_type'] => $tmp['type_name'])
+												{
+													echo '<option value="'.$tmp['id_type'].'"'.($_SENSOR['type'] == $tmp['id_type'] ? ' selected="selected"' : '').'>'.$tmp['type_name'].'</option>'.PHP_EOL;
+												}
+											echo '</select>';
+											
+										?>
+								
 								</div>
 								
 								<div class="col-sm">
@@ -213,6 +249,7 @@ if(isset($_GET['action']))
 							{
 								$_tmp = mysql_fetch_assoc($q_first);
 								$first_event = date('d.m.Y H:i:s', $_tmp['time']);
+								$first_event_unix = $_tmp['time'];
 							}
 						
 						// последнее событие
@@ -225,7 +262,11 @@ if(isset($_GET['action']))
 							{
 								$_tmp = mysql_fetch_assoc($q_last);
 								$last_event = date('d.m.Y H:i:s', $_tmp['time']);
+								$last_event_unix = $_tmp['time'];
 							}
+						
+						// В среднем за день
+						$div_by_day = round($c_events / ceil(($last_event_unix - $first_event_unix) / 86400), 1);
 						
 						// комната 
 						$q_room = mysql_query("SELECT * FROM `rooms` WHERE `deleted` = 0 AND `id` = ".$_SENSOR['id_room']);
@@ -241,6 +282,9 @@ if(isset($_GET['action']))
 						setTitle('Датчик '.$_SENSOR['full_name'].' | '.$_ROOM['name']);
 						getHeader();
 						
+						// URL файла process:
+						$url = 'https://'.$_SERVER['HTTP_HOST'].str_replace('/sensor.php', '/process_sensors.php', $_SERVER['DOCUMENT_URI']).'?key='.$_key.'&sensor='.$_SENSOR['short_name'];
+						
 						?>
 						
 						<dl class="row">
@@ -251,16 +295,25 @@ if(isset($_GET['action']))
 							<dd class="col-sm-9"><?=$_SENSOR['short_name']?></dd>
 							
 							<dt class="col-sm-3">Тип:</dt>
-							<dd class="col-sm-9"><?=$_SENSOR['type']?></dd>
+							<dd class="col-sm-9"><?=$_SENSORS_TYPES[$_SENSOR['type']]?></dd>
 							
 							<dt class="col-sm-3">Комната:</dt>
 							<dd class="col-sm-9"><?=$_ROOM['name']?></dd>
 							
+							<dt class="col-sm-3">Первое событие</dt>
+							<dd class="col-sm-9"><span class="badge badge-pill badge-info"><?=$first_event?></span></dd>
+							
+							<dt class="col-sm-3">Последнее событие</dt>
+							<dd class="col-sm-9"><span class="badge badge-pill badge-info"><?=$last_event?></span></dd>
+							
 							<dt class="col-sm-3">Число событий</dt>
-							<dd class="col-sm-9"><span class="badge badge-pill badge-info"><?=$c_events?></span></dd>
+							<dd class="col-sm-9"><span class="badge badge-pill badge-info"><?=$c_events?></span> (в среднем в день - <span class="badge badge-pill badge-info"><?=$div_by_day?></span></dd>
 							
 							<dt class="col-sm-3">Уведомления:</dt>
 							<dd class="col-sm-9"><?=$_SENSOR['notify'] == 1 ? '<span class="badge badge-pill badge-primary">Включены</span>' : '<span class="badge badge-pill badge-secondary">Выключены</span>'?></dd>
+							
+							
+							
 						</dl>
 							
 							<a class="btn btn-success" href="sensor.php?id_sensor=<?=$_SENSOR['id']?>&action=edit">Редактировать</a>
@@ -279,7 +332,6 @@ if(isset($_GET['action']))
 					{
 						if(!empty($_POST['button']))
 							{
-								// echo '<pre>'; print_r($_POST); die;
 								$formError = array();
 								
 								if(empty($_POST['full_name']))
@@ -297,13 +349,13 @@ if(isset($_GET['action']))
 									}
 								else
 									{
-										if(!preg_match('#^([a-zA-Z0-9_]{1,20})$#iu', $_POST['short_name']))
+										if(!preg_match('#^([a-zA-Z0-9_]{3,30})$#iu', $_POST['short_name']))
 											{
-												$formError[] = 'Короткое название датчика должно содержать от 3 до 20 символов a-z, цифр и нижнего подчеркивания';
+												$formError[] = 'Короткое название датчика должно содержать от 3 до 30 символов a-z, цифр и нижнего подчеркивания';
 											}
 										else
 											{
-												$db['short_name'] = dbFilter($_POST['short_name'], 20);
+												$db['short_name'] = dbFilter($_POST['short_name'], 30);
 												
 												$q_check = mysql_query("SELECT * FROM `ewelink_sensors` WHERE `short_name` = '".$db['short_name']."'");
 												if(mysql_num_rows($q_check) != 0)
@@ -337,9 +389,21 @@ if(isset($_GET['action']))
 										$db['notify'] = 0;
 									}
 								
+								if(!empty($_POST['type']))
+									{
+										$db['type'] = (int)$_POST['type'];
+										if(empty($_SENSORS_TYPES[$db['type']]))
+											{
+												$formError[] = 'Неизвестный тип датчика';
+											}
+									}
+								else
+									{
+										$formError[] = 'Выберите тип датчика';
+									}
+								
 								$db['time'] = time();
 								$db['deleted'] = 0;
-								$db['type'] = 'circuit'; // других у нас пока что нет
 								
 								if(empty($formError))
 									{
@@ -377,24 +441,30 @@ if(isset($_GET['action']))
 								<div class="col-sm">
 									Комната:<br />
 									<?php
-									$q_rooms = mysql_query("SELECT * FROM `rooms` WHERE `deleted` = 0 ORDER BY `name` ASC");
-									
-									if(mysql_num_rows($q_rooms) == 0)
-										{
-											echo showError('Комнаты не найдены. <a href="rooms.php?action=add">Создать комнату</a>');
-										}
-									else
-										{
-											echo '<select class="form-control" name="id_room">';
-											while($_ROOM = mysql_fetch_assoc($q_rooms))
-												{
-													echo '<option value="'.$_ROOM['id'].'">'.$_ROOM['name'].'</option>'.PHP_EOL;
-												}
-											echo '</select>';
-										}
+										echo '<select class="form-control" name="id_room">';
+										foreach($_ROOM as $tmp['id_room'] => $tmp['room_name'])
+											{
+												echo '<option value="'.$tmp['id_room'].'">'.$tmp['room_name'].'</option>'.PHP_EOL;
+											}
+										echo '</select>';
 								
 									?>
 								</div>
+								
+								<div class="col-sm">
+									Тип датчика:<br />
+									<?php
+										echo '<select class="form-control" name="type">';
+										foreach($_SENSORS_TYPES as $tmp['id_type'] => $tmp['type_name'])
+											{
+												echo '<option value="'.$tmp['id_type'].'">'.$tmp['type_name'].'</option>'.PHP_EOL;
+											}
+										echo '</select>';
+								
+									?>
+								
+								</div>
+								
 								
 								<div class="col-sm">
 									<input type="checkbox" name="notify" /> Присылать уведомление о срабатывании датчика
