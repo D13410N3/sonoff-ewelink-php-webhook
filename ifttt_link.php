@@ -3,6 +3,18 @@
 include_once 'core.php';
 autOnly();
 
+if(isset($_GET['short_name']) && isset($_GET['action']))
+	{
+		$short_name = mysql_real_escape_string($_GET['short_name']);
+		$action = $_GET['action'] == 'on' ? 'on' : 'off';
+		
+		switchRelay($short_name, $action, ' (с сайта)', true);
+		header('Location: index.php?'.$short_name.'_turned_'.$action.'=1&');
+	}
+
+
+
+/* LEGACY 
 if(isset($_GET['id_device']) && isset($_GET['action']))
 	{
 		$unixtime = time();
@@ -41,14 +53,14 @@ if(isset($_GET['id_device']) && isset($_GET['action']))
 		
 		$_DEVICE = mysql_fetch_assoc($q_device);
 		
-		/*
 		
-		1) Делаем запрос к IFTTT
-		2) Записываем событие в свою БД
-		3) Шлем сообщение в Telegram
-		4) Редиректим назад
 		
-		*/
+		#1) Делаем запрос к IFTTT
+		#2) Записываем событие в свою БД
+		#3) Шлем сообщение в Telegram
+		#4) Редиректим назад
+		
+		
 		
 		
 		// запрос к ifttt
@@ -147,3 +159,4 @@ if(isset($_GET['id_device']) && isset($_GET['action']))
 		header('Location: index.php?turned_'.$action.'=1&');
 		exit;
 	}
+*/
