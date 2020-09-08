@@ -184,7 +184,6 @@ function getHeader()
 function getFooter()
 	{
 		?>
-		
 		</div>
 	</main>
 
@@ -328,13 +327,13 @@ function dbFilter($string, $length)
 
 // функция включения реле через IFTTT
 
-function switchRelay($relay = '', $action = 'off', $byScript = false, $notify = false)
+function switchRelay($relay = '', $action = 'off', $description = '', $notify = false)
 	{
 		global $_CHAT; // вот такая вот я мразь, да
 		global $_IFTTT; // больше глобалок богу глобалок 
 		
-		$unixtime = time;
-		
+		$unixtime = time();
+		$strtime = date('d.m.Y H:i:s', $unixtime);
 		/*
 		
 		1) Делаем запрос к IFTTT
@@ -369,6 +368,31 @@ function switchRelay($relay = '', $action = 'off', $byScript = false, $notify = 
 						$act = $action == 'on' ? 1 : 0;
 						$ru_action = $action == 'on' ? 'вкл.' : 'выкл.';
 						
+						// Необходимо проверить историю событий по данному устройству.
+						// Если по истории событий последнее действие совпадает с текущим - мы не будем записывать его в базу
+						// Таким образом у нас не будет перекоса по событиям, но действие в любом случае будет выполнено
+						
+						$q_check_last_event = mysql_query("SELECT * FROM `ewelink_events` WHERE `id_device` = ".$_DEVICE['id']." ORDER BY `id` DESC LIMIT 1");
+						if(mysql_num_rows($q_check_last_event) == 1)
+							{
+								$_last_event = mysql_fetch_assoc($q_check_last_event);
+								if($_last_event['action'] == $act)
+									{
+										// Последнее соыбтие по БД совпадает с заказанным действием. Игнорируем запись в БД
+										$_write_to_db = false;
+									}
+								else
+									{
+										// События не совпадают. Пишем в базу
+										$_write_to_db = true;
+									}
+							}
+						else
+							{
+								// Событий вообще нет - пишем в БД
+								$_write_to_db = true;
+							}
+						
 						$link = 'https://maker.ifttt.com/trigger/ewelink_'.$_DEVICE['short_name'].'_'.$action.'/with/key/'.$_IFTTT['key'];
 						
 						// making a request 
@@ -380,8 +404,11 @@ function switchRelay($relay = '', $action = 'off', $byScript = false, $notify = 
 						$a = curl_exec($ch);
 						
 						
-						//// записываем событие 
-						mysql_query("INSERT INTO `ewelink_events`(`id_device`, `time`, `action`) VALUES (".$_DEVICE['id'].", ".$unixtime.", ".$act.")");
+						//// записываем событие, если нет задвоения
+						if($_write_to_db === true)
+							{
+								mysql_query("INSERT INTO `ewelink_events`(`id_device`, `time`, `action`) VALUES (".$_DEVICE['id'].", ".$unixtime.", ".$act.")");
+							}
 						
 						if(@$notify === true)
 							{
@@ -409,9 +436,9 @@ function switchRelay($relay = '', $action = 'off', $byScript = false, $notify = 
 								
 								$message .= '<i>'.$ru_action.'</i>';
 								
-								if(@$byScript === true)
+								if(!empty($description))
 									{
-										$message .= ' (скриптом)';
+										$message .= $description;
 									}
 								
 								if($act == 0)
@@ -463,6 +490,10 @@ function switchRelay($relay = '', $action = 'off', $byScript = false, $notify = 
 										
 										$message .= PHP_EOL;
 										$message .= $string_duration;
+										if($_write_to_db === false)
+											{
+												$message .= PHP_EOL.'Повторение последнего действия. Запись в события не внесена';
+											}
 										
 									}
 								sendMessage($_CHAT['id'], $message, 'HTML');
