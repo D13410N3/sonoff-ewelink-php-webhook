@@ -106,11 +106,11 @@ while($_DEVICE = mysql_fetch_assoc($q_devices))
 		##################### Определяем статус устройства, рисуем badge 
 		if($status == 0)
 			{
-				echo '<a class="badge badge-pill badge-secondary" href="ifttt_link.php?id_device='.$_DEVICE['id'].'&action=on&date='.$date.'">off</a>';
+				echo '<a class="badge badge-pill badge-secondary" href="ifttt_link.php?short_name='.$_DEVICE['short_name'].'&action=on&date='.$date.'">off</a>';
 			}
 		else
 			{
-				echo '<a class="badge badge-pill badge-primary" href="ifttt_link.php?id_device='.$_DEVICE['id'].'&action=off&date='.$date.'">on</a>';
+				echo '<a class="badge badge-pill badge-primary" href="ifttt_link.php?short_name='.$_DEVICE['short_name'].'&action=off&date='.$date.'">on</a>';
 			}
 		
 		echo '</div>';
@@ -383,7 +383,7 @@ if(!empty($_SETTINGS['mikrotik_address']) && !empty($_SETTINGS['mikrotik_port'])
 							}
 						else
 							{
-								$__status = '<span class="badge badge-success">Online</span>';
+								$__status = '<span class="badge badge-success">Online</span> <span class="badge badge-info">'.$_CLIENT['interface'].'</span>';
 								$__last_event = '<span class="badge badge-info">'.showTimeInterval($unixtime - $_CLIENT['time_update']).'</span>';
 							}
 						
@@ -398,6 +398,7 @@ if(!empty($_SETTINGS['mikrotik_address']) && !empty($_SETTINGS['mikrotik_port'])
 							<div style="text-align: center"><b><?=$_CLIENT['name']?></b></div>
 								<span class="small">Статус: </span><?=$__status?><br />
 								<span class="small"><?=$_CLIENT['status'] == 0 ? 'Downtime' : 'Uptime'?>: </span><?=$__last_event?><br />
+								<span class="small">MAC: </span><span class="badge badge-light"><?=preg_replace("/(..)(?!$)/i", "$1:", $_CLIENT['mac'])?></span><br />
 								<a href="events_wireless.php?id=<?=$_CLIENT['id']?>" class="badge badge-light">События</a>
 								<a href="wireless_client.php?id=<?=$_CLIENT['id']?>&action=view" class="badge badge-light">Подробно</a>
 						</div>
@@ -405,7 +406,17 @@ if(!empty($_SETTINGS['mikrotik_address']) && !empty($_SETTINGS['mikrotik_port'])
 						
 						<?php
 					}
-				echo '</div></div>';
+				echo '</div>
+				<input type="checkbox" id="chb" /> Автообновление
+				<script>
+				setTimeout(function () {
+
+				if (document.getElementById(\'chb\').checked)
+				location.reload();
+
+				}, 5000)
+				</script>
+				</div>';
 			}
 	}
 
