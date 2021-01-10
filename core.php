@@ -189,7 +189,7 @@ function getFooter()
 
 	<footer class="footer mt-auto py-3">
 		<div class="container">
-			<span class="text-muted"><span class="copyleft">&copy;</span> <a href="https://github.com/ICQFan4ever" target="_blank">D13410N3</a></span>
+			<span class="text-muted"><span class="copyleft">&copy;</span> COPYLEFT ALL WRONGS RESERVED by <a href="https://github.com/ICQFan4ever" target="_blank">D13410N3</a></span>
 		</div>
 	</footer>
 
