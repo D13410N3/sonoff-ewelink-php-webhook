@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 include_once 'core.php';
 
@@ -12,7 +12,7 @@ $view_date = explode('-', $date);
 $view_date = array_reverse($view_date);
 $view_date = implode('.', $view_date);
 
-// Определяем даты
+// Определяем stamp начала и конца дня
 $day_start = strtotime($date.' 00:00:00');
 $day_end = strtotime($date.' 23:59:59');
 $unixtime = time();
@@ -45,7 +45,16 @@ while($_tmp = mysql_fetch_assoc($q_rooms))
 		$_SUM['rooms']++;
 	}
 
-// Определяем время последнего события (relay)
+// Определяем список типов датчиков
+$q_sensors_types = mysql_query("SELECT * FROM `web_sensors_types` ORDER BY `id` ASC");
+$_SENSORS_TYPES = array();
+
+while($_tmp = mysql_fetch_assoc($q_sensors_types))
+	{
+		$_SENSORS_TYPES[$_tmp['id']] = $_tmp;
+	}
+
+// Определяем время последнего события (ewelink-relay)
 $q_last_event = mysql_query("SELECT * FROM `ewelink_events` ORDER BY `id` DESC LIMIT 1");
 if(mysql_num_rows($q_last_event) == 1)
 	{
@@ -58,7 +67,7 @@ else
 ?>
 
 <div class="alert alert-primary" role="alert">
-  Статистика устройств за <b><?=$view_date?></b>
+  Статистика за <b><?=$view_date?></b>
 </div>
 
 <div class="row">
@@ -74,6 +83,8 @@ else
 		</div>
 	</form>
 </div>
+
+<h1 class="mt-5">Приборы</h1>
 
 <span class="small">Последнее событие: <?=showTimeInterval($unixtime - $__last_event['time'])?> назад</span>
 
@@ -100,17 +111,17 @@ while($_DEVICE = mysql_fetch_assoc($q_devices))
 				$status = $event_last['action'];
 			}
 		##################### Начинаем рисовать блок. Выводим название
-		echo '<div class="col-sm-4 device_card">';
+		echo '<div class="col-sm-4 device_card" style="border: 1px dotted #ccc; border-radius: 5px; position: relative;">';
 		echo '<div style="text-align: center"><b>'.$_DEVICE['full_name'].' | '.$_ROOMS[$_DEVICE['id_room']].'</b> ';
 		
 		##################### Определяем статус устройства, рисуем badge 
 		if($status == 0)
 			{
-				echo '<a class="badge badge-pill badge-secondary" href="ifttt_link.php?short_name='.$_DEVICE['short_name'].'&action=on&date='.$date.'">off</a>';
+				echo '<a class="bi bi-lightbulb" href="ifttt_link.php?short_name='.$_DEVICE['short_name'].'&action=on&date='.$date.'" style="position:absolute; right: 5px; top: 5px; font-size: 1.7rem;"></a>';
 			}
 		else
 			{
-				echo '<a class="badge badge-pill badge-primary" href="ifttt_link.php?short_name='.$_DEVICE['short_name'].'&action=off&date='.$date.'">on</a>';
+				echo '<a class="bi bi-lightbulb-fill" href="ifttt_link.php?short_name='.$_DEVICE['short_name'].'&action=off&date='.$date.'" style="position:absolute; right: 5px; top: 5px; font-size: 1.7rem;"></a>';
 			}
 		
 		echo '</div>';
@@ -279,8 +290,8 @@ $_SUM['events'] = $_SUM['on_events'] + $_SUM['off_events'];
 		<div style="text-align: center"><b>Всего за <?=$_TODAY ? 'сегодня' : $view_date?></b></div>
 			<span class="small">Событий: </span> <span class="badge badge-success"><?=$_SUM['on_events']?></span> <span class="badge badge-danger"><?=$_SUM['off_events']?></span><br />
 			<span class="small">Время работы:</span> <span class="badge badge-info"><?=showTimeInterval($_SUM['uptime'])?></span>
-		</div>
 	</div>
+</div>
 
 
 <?php
@@ -336,7 +347,7 @@ if(mysql_num_rows($q_sensors) > 0)
 				$c_events_overall = mysql_num_rows(mysql_query("SELECT * FROM `ewelink_sensors_events` WHERE `id_sensor` = ".$_SENSOR['id']));
 				
 				?>
-				<div class="col-sm-4 device_card">
+				<div class="col-sm-4 device_card" style="border: 1px dotted #ccc; border-radius: 5px;">
 					<div style="text-align: center"><b><?=$_SENSOR['full_name'].' | '.$_ROOMS[$_SENSOR['id_room']]?></b></div>
 						<span class="small">Последнее событие: </span><?=$last_time?><br />
 						<span class="small"><?=$_TODAY ? 'Сегодня' : 'За '.date('d.m', $day_start)?> событий: </span><span class="badge badge-info"><?=$c_events_today?></span><br />
@@ -350,74 +361,6 @@ if(mysql_num_rows($q_sensors) > 0)
 		
 		echo '</div>';
 				
-	}
-
-##############################################################################################
-##############################################################################################
-##############################################################################################
-##############################СЕКЦИЯ ПО РАБОТЕ С WI-FI КЛИЕНТАМИ##############################
-##############################################################################################
-##############################################################################################
-##############################################################################################
-
-if(!empty($_SETTINGS['mikrotik_address']) && !empty($_SETTINGS['mikrotik_port']) && !empty($_SETTINGS['mikrotik_username']) && !empty($_SETTINGS['mikrotik_password']))
-	{
-		$q_clients = mysql_query("SELECT * FROM `wireless_clients` WHERE `deleted` = 0 ORDER BY `id` ASC");
-
-		if(mysql_num_rows($q_clients) > 0)
-			{
-				echo '<h1 class="mt-5">Wi-Fi устройства</h1>';
-				echo '<span class="small">Последнее обновление: '.showTimeInterval($unixtime - $_SETTINGS['last_mikrotik_update']).' назад</span>';
-				echo '<div class="row">';
-				
-				while($_CLIENT = mysql_fetch_assoc($q_clients))
-					{
-						// Online/offline
-						// Последнее событие - <time>
-						
-						// on/off
-						if($_CLIENT['status'] == 0)
-							{
-								$__status = '<span class="badge badge-secondary">Offline</span>';
-								$__last_event = '<span class="badge badge-secondary">'.showTimeInterval($unixtime - $_CLIENT['time_update']).'</span>';
-							}
-						else
-							{
-								$__status = '<span class="badge badge-success">Online</span> <span class="badge badge-info">'.$_CLIENT['interface'].'</span>';
-								$__last_event = '<span class="badge badge-info">'.showTimeInterval($unixtime - $_CLIENT['time_update']).'</span>';
-							}
-						
-
-						
-						// last event
-						
-						
-						////// отрисовка
-						?>
-						<div class="col-sm-4 device_card">
-							<div style="text-align: center"><b><?=$_CLIENT['name']?></b></div>
-								<span class="small">Статус: </span><?=$__status?><br />
-								<span class="small"><?=$_CLIENT['status'] == 0 ? 'Downtime' : 'Uptime'?>: </span><?=$__last_event?><br />
-								<span class="small">MAC: </span><span class="badge badge-light"><?=preg_replace("/(..)(?!$)/i", "$1:", $_CLIENT['mac'])?></span><br />
-								<a href="events_wireless.php?id=<?=$_CLIENT['id']?>" class="badge badge-light">События</a>
-								<a href="wireless_client.php?id=<?=$_CLIENT['id']?>&action=view" class="badge badge-light">Подробно</a>
-						</div>
-						
-						
-						<?php
-					}
-				echo '</div>
-				<input type="checkbox" id="chb" /> Автообновление
-				<script>
-				setTimeout(function () {
-
-				if (document.getElementById(\'chb\').checked)
-				location.reload();
-
-				}, 5000)
-				</script>
-				</div>';
-			}
 	}
 
 getFooter();
